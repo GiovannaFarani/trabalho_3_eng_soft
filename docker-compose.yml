@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: veridt_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: veridt
+      POSTGRES_PASSWORD: veridt_password
+      POSTGRES_DB: veridt_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01_init.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+      - postgres_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: veridt_rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: veridt
+      RABBITMQ_DEFAULT_PASS: veridt_password
+
+volumes:
+  postgres_data:

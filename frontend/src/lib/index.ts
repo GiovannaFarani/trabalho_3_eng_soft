@@ -10,6 +10,11 @@ export { Checkbox, type CheckboxProps } from './components/checkbox/index.ts';
 export { Label, type LabelProps, type LabelVariant } from './components/label/index.ts';
 export { RadioGroup, RadioGroupRoot, RadioGroupItem } from './components/radio-group/index.ts';
 export {
+	ScrollArea,
+	type ScrollAreaOrientation,
+	type ScrollAreaProps
+} from './components/scroll-area/index.ts';
+export {
 	TextInput,
 	Input,
 	type TextInputProps,

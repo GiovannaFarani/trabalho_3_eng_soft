@@ -9,7 +9,8 @@
 		EyeOff,
 		ArrowRight,
 		Scale,
-		Info
+		Info,
+		Shield
 	} from '@lucide/svelte';
 	import { Button, Checkbox, Label, RadioGroup, Tabs, TextInput } from '#lib';
 
@@ -29,8 +30,10 @@
 	const termsId = $props.id();
 </script>
 
-<div class="flex flex-row">
-	<div class="flex h-dvh w-md min-w-md flex-col justify-between bg-veridt-blue p-11">
+<div class="flex h-dvh flex-row overflow-hidden">
+	<div
+		class="flex h-full w-md min-w-md shrink-0 flex-col justify-between overflow-y-auto bg-veridt-blue p-11"
+	>
 		<div class="flex flex-row items-center gap-2.5">
 			<ShieldCheck class="size-8.5 text-white" />
 			<div class="veridt-text text-white">veridt</div>
@@ -71,8 +74,8 @@
 			<p class="text-[11px] text-on-veridt-blue">Termos de uso • Política de privacidade</p>
 		</div>
 	</div>
-	<div class="flex w-full flex-col gap-7 px-11">
-		<div class="flex flex-col">
+	<div class="flex h-full min-w-0 flex-1 flex-col gap-7 overflow-hidden px-11 pt-13 pb-8">
+		<div class="flex shrink-0 flex-col">
 			<div class="flex flex-row justify-between">
 				<p class="text-[11px] text-on-white-tertiary">ACESSO À PLATAFORMA</p>
 				<div class="flex flex-row items-center gap-1.5">
@@ -85,13 +88,19 @@
 				Entre na sua conta ou crie um perfil para iniciar seus registros.
 			</p>
 		</div>
-		<div class="rounded-2xl border border-card-border bg-white">
-			<Tabs.Root value="login">
-				<Tabs.List>
+		<div
+			class="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-card-border bg-white"
+		>
+			<Tabs.Root value="login" class="min-h-0 flex-1">
+				<Tabs.List class="shrink-0">
 					<Tabs.Trigger class="ml-7 py-4.5" value="login">Entrar</Tabs.Trigger>
 					<Tabs.Trigger class="py-4.5" value="register">Cadastrar Usuário</Tabs.Trigger>
+					<div class="mr-7 ml-auto flex flex-row items-center gap-1.5">
+						<LockKeyhole class="size-3.25 text-on-white-tertiary" />
+						<p class="text-[11px] text-on-white-tertiary">Conexão protegida</p>
+					</div>
 				</Tabs.List>
-				<Tabs.Content value="login" class="p-7">
+				<Tabs.Content value="login" class="min-h-0 flex-1 overflow-y-auto p-7">
 					<form class="flex flex-col gap-4.75" onsubmit={(e) => e.preventDefault()}>
 						<div class="flex flex-col gap-1.5">
 							<h3 class="text-on-white-main">Bem-vindo de volta</h3>
@@ -141,7 +150,7 @@
 						</Button>
 					</form>
 				</Tabs.Content>
-				<Tabs.Content value="register" class="p-7">
+				<Tabs.Content value="register" class="min-h-0 flex-1 overflow-y-auto p-7">
 					<form class="flex flex-col gap-4.5" onsubmit={(e) => e.preventDefault()}>
 						<div class="flex flex-col gap-1.5">
 							<h3 class="text-on-white-main">Cadastrar Usuário</h3>
@@ -246,6 +255,12 @@
 					</form>
 				</Tabs.Content>
 			</Tabs.Root>
+		</div>
+		<div class="flex shrink-0 flex-row items-center justify-center gap-1.75">
+			<Shield class="size-3.5 text-on-white-tertiary" />
+			<p class="text-[11px] text-on-white-tertiary">
+				Seus dados pessoais são tratados de acordo com a LGPD.
+			</p>
 		</div>
 	</div>
 </div>

@@ -4,9 +4,16 @@
 		ScanLine,
 		FingerprintPattern,
 		LockKeyhole,
-		CircleQuestionMark
+		CircleQuestionMark,
+		Eye,
+		EyeOff,
+		ArrowRight
 	} from '@lucide/svelte';
-	import { Tabs } from '#lib';
+	import { Button, Tabs, TextInput } from '#lib';
+
+	let email = $state('');
+	let password = $state('');
+	let showPassword = $state(false);
 </script>
 
 <div class="flex flex-row">
@@ -72,25 +79,54 @@
 					<Tabs.Trigger class="py-4.5" value="register">Cadastrar Usuário</Tabs.Trigger>
 				</Tabs.List>
 				<Tabs.Content value="login" class="p-7">
-					<div class="flex flex-col gap-4.75">
+					<form class="flex flex-col gap-4.75" onsubmit={(e) => e.preventDefault()}>
 						<div class="flex flex-col gap-1.5">
 							<h3 class="text-on-white-main">Bem-vindo de volta</h3>
 							<p class="text-xs leading-[150%] text-on-white-tertiary">
 								Use seu e-mail e senha para continuar.
 							</p>
 						</div>
+						<TextInput
+							label="E-mail"
+							type="email"
+							placeholder="fulano@exemplo.com.br"
+							autocomplete="email"
+							bind:value={email}
+						/>
+						<TextInput
+							label="Senha"
+							type={showPassword ? 'text' : 'password'}
+							placeholder="••••••••••••"
+							autocomplete="current-password"
+							bind:value={password}
+						>
+							{#snippet trailing()}
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									class="text-on-white-tertiary hover:text-on-white-main"
+									aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+									onclick={() => (showPassword = !showPassword)}
+								>
+									{#if showPassword}
+										<EyeOff class="size-4" />
+									{:else}
+										<Eye class="size-4" />
+									{/if}
+								</Button>
+							{/snippet}
+						</TextInput>
 						<div class="flex flex-col gap-1.75">
-							<p class="text-xs font-semibold text-on-white-secondary">E-mail</p>
-						</div>
-						<div class="flex flex-col gap-1.75">
-							<p class="text-xs font-semibold text-on-white-secondary">Senha</p>
-						</div>
-						<div class="flex flex-col gap-1.75">
-							<p class="text-xs font-semibold text-on-white-main">
+							<Button type="button" variant="link" size="sm" class="self-start">
 								Esqueci minha senha / Recuperar Senha
-							</p>
+							</Button>
 						</div>
-					</div>
+						<Button type="submit" class="w-full">
+							<ArrowRight class="size-4" />
+							Entrar no Sistema
+						</Button>
+					</form>
 				</Tabs.Content>
 				<Tabs.Content value="register" class="p-7">
 					<p class="text-sm text-on-white-secondary">

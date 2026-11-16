@@ -1,2 +1,19 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
+
+@theme {
+	--default-font-family: 'Inter', sans-serif;
+	--color-veridt-blue: #0f172a;
+	--color-on-veridt-blue: #cbd5e1;
+}
+
+h1 {
+	font-weight: 600;
+	font-size: 40px;
+	line-height: 118%;
+}
+
+.veridt-text {
+	font-weight: 400;
+	font-size: 29px;
+}

@@ -21,17 +21,17 @@
 				<div
 					class="size-20 content-center justify-items-center rounded-2xl border border-[#334155] bg-[#1E293B]"
 				>
-					<ScanLine class="size-8.75 text-on-veridt-blue " />
+					<ScanLine class="size-8.75 text-on-veridt-blue" />
 				</div>
 				<div
 					class="size-20 content-center justify-items-center rounded-2xl border border-[#334155] bg-[#1E293B]"
 				>
-					<FingerprintPattern class="size-8.75 text-on-veridt-blue " />
+					<FingerprintPattern class="size-8.75 text-on-veridt-blue" />
 				</div>
 				<div
 					class="size-20 content-center justify-items-center rounded-2xl border border-[#334155] bg-[#1E293B]"
 				>
-					<ShieldCheck class="size-8.75 text-shield-green " />
+					<ShieldCheck class="size-8.75 text-shield-green" />
 				</div>
 			</div>
 			<div class="flex flex-row items-center gap-2">
@@ -44,5 +44,14 @@
 			<p class="text-[11px] text-on-veridt-blue">Termos de uso • Política de privacidade</p>
 		</div>
 	</div>
-	<div class="bg-yellow"></div>
+	<div class="flex w-full flex-col gap-2.5 px-11">
+		<div>
+			<p class="text-[11px] text-on-white-tertiary">ACESSO À PLATAFORMA</p>
+			<h2 class="text-on-white-main">Sua evidência começa aqui.</h2>
+			<p class="text-sm text-on-white-secondary">
+				Entre na sua conta ou crie um perfil para iniciar seus registros.
+			</p>
+		</div>
+		<div class="rounded-2xl border border-card-border bg-white"></div>
+	</div>
 </div>

@@ -6,12 +6,25 @@
 	--color-veridt-blue: #0f172a;
 	--color-on-veridt-blue: #cbd5e1;
 	--color-shield-green: #10b981;
+	--color-on-white-main: #0f172a;
+	--color-on-white-secondary: #475569;
+	--color-on-white-tertiary: #64748b;
+	--color-card-border: #e2e8f0;
+}
+
+body {
+	background-color: #f8fafc;
 }
 
 h1 {
 	font-weight: 600;
 	font-size: 40px;
 	line-height: 118%;
+}
+
+h2 {
+	font-weight: 700;
+	font-size: 30px;
 }
 
 .veridt-text {

@@ -1,3 +1,3 @@
-import Label, { type LabelProps } from './Label.svelte';
+import Label, { type LabelProps, type LabelVariant } from './Label.svelte';
 
-export { Label, type LabelProps };
+export { Label, type LabelProps, type LabelVariant };

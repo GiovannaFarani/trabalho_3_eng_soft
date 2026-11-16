@@ -7,13 +7,26 @@
 		CircleQuestionMark,
 		Eye,
 		EyeOff,
-		ArrowRight
+		ArrowRight,
+		Scale,
+		Info
 	} from '@lucide/svelte';
-	import { Button, Tabs, TextInput } from '#lib';
+	import { Button, Checkbox, Label, RadioGroup, Tabs, TextInput } from '#lib';
 
 	let email = $state('');
 	let password = $state('');
 	let showPassword = $state(false);
+
+	let profileType = $state<'lawyer' | 'individual'>('lawyer');
+	let fullName = $state('');
+	let registerEmail = $state('');
+	let cpf = $state('');
+	let oabNumber = $state('');
+	let registerPassword = $state('');
+	let showRegisterPassword = $state(false);
+	let acceptedTerms = $state(true);
+
+	const termsId = $props.id();
 </script>
 
 <div class="flex flex-row">
@@ -110,9 +123,9 @@
 									onclick={() => (showPassword = !showPassword)}
 								>
 									{#if showPassword}
-										<EyeOff class="size-4" />
-									{:else}
 										<Eye class="size-4" />
+									{:else}
+										<EyeOff class="size-4" />
 									{/if}
 								</Button>
 							{/snippet}
@@ -129,9 +142,108 @@
 					</form>
 				</Tabs.Content>
 				<Tabs.Content value="register" class="p-7">
-					<p class="text-sm text-on-white-secondary">
-						Crie seu perfil para iniciar seus registros.
-					</p>
+					<form class="flex flex-col gap-4.5" onsubmit={(e) => e.preventDefault()}>
+						<div class="flex flex-col gap-1.5">
+							<h3 class="text-on-white-main">Cadastrar Usuário</h3>
+							<p class="text-xs leading-[150%] text-on-white-tertiary">
+								Novo por aqui? Preencha seu perfil de acesso.
+							</p>
+						</div>
+
+						<div class="flex flex-col gap-1.75">
+							<Label>Tipo de perfil</Label>
+							<RadioGroup.Root bind:value={profileType}>
+								<RadioGroup.Item value="lawyer">
+									<Scale class="size-3.75" />
+									Advogado
+								</RadioGroup.Item>
+								<RadioGroup.Item value="individual">Usuário Comum</RadioGroup.Item>
+							</RadioGroup.Root>
+						</div>
+
+						<TextInput
+							label="Nome Completo"
+							type="text"
+							placeholder="Fulano da Silva"
+							autocomplete="name"
+							bind:value={fullName}
+						/>
+
+						<TextInput
+							label="E-mail"
+							type="email"
+							placeholder="fulano@exemplo.com.br"
+							autocomplete="email"
+							bind:value={registerEmail}
+						/>
+
+						<div class="flex flex-row gap-3.5">
+							<TextInput
+								wrapperClass="flex-1"
+								label="CPF"
+								type="text"
+								placeholder="123.456.789-09"
+								bind:value={cpf}
+							/>
+							{#if profileType === 'lawyer'}
+								<TextInput
+									wrapperClass="flex-1"
+									label="Número da OAB"
+									type="text"
+									placeholder="45.678 / BA"
+									class="border-[#2563eb]! bg-[#eff6ff]! focus:border-[#2563eb]! focus:ring-[#2563eb]/15!"
+									bind:value={oabNumber}
+								/>
+							{/if}
+						</div>
+
+						{#if profileType === 'lawyer'}
+							<div class="flex flex-row items-center gap-1.75">
+								<Info class="size-3.25 shrink-0 text-[#2563eb]" />
+								<p class="text-[11px] text-[#2563eb]">
+									Número da OAB obrigatório para o perfil Advogado.
+								</p>
+							</div>
+						{/if}
+
+						<TextInput
+							label="Senha"
+							type={showRegisterPassword ? 'text' : 'password'}
+							placeholder="••••••••••••"
+							autocomplete="new-password"
+							hint="Use ao menos 8 caracteres, letras, números e símbolos."
+							bind:value={registerPassword}
+						>
+							{#snippet trailing()}
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									class="text-on-white-tertiary hover:text-on-white-main"
+									aria-label={showRegisterPassword ? 'Ocultar senha' : 'Mostrar senha'}
+									onclick={() => (showRegisterPassword = !showRegisterPassword)}
+								>
+									{#if showRegisterPassword}
+										<Eye class="size-4" />
+									{:else}
+										<EyeOff class="size-4" />
+									{/if}
+								</Button>
+							{/snippet}
+						</TextInput>
+
+						<div class="flex flex-row items-center gap-2.25">
+							<Checkbox id={termsId} bind:checked={acceptedTerms} />
+							<Label for={termsId} variant="inline">
+								Li e aceito os Termos de Uso e a Política de Privacidade da Veridt.
+							</Label>
+						</div>
+
+						<Button type="submit" class="w-full">
+							<ArrowRight class="size-4" />
+							Criar Conta
+						</Button>
+					</form>
 				</Tabs.Content>
 			</Tabs.Root>
 		</div>

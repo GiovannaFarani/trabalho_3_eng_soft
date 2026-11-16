@@ -6,7 +6,9 @@ export {
 	type ButtonSize,
 	type ButtonVariant
 } from './components/button/index.ts';
-export { Label, type LabelProps } from './components/label/index.ts';
+export { Checkbox, type CheckboxProps } from './components/checkbox/index.ts';
+export { Label, type LabelProps, type LabelVariant } from './components/label/index.ts';
+export { RadioGroup, RadioGroupRoot, RadioGroupItem } from './components/radio-group/index.ts';
 export {
 	TextInput,
 	Input,

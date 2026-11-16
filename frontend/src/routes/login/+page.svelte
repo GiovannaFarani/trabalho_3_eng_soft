@@ -1,5 +1,12 @@
-<script>
-	import { ShieldCheck, ScanLine, FingerprintPattern, LockKeyhole } from '@lucide/svelte';
+<script lang="ts">
+	import {
+		ShieldCheck,
+		ScanLine,
+		FingerprintPattern,
+		LockKeyhole,
+		CircleQuestionMark
+	} from '@lucide/svelte';
+	import { Tabs } from '#lib';
 </script>
 
 <div class="flex flex-row">
@@ -44,14 +51,53 @@
 			<p class="text-[11px] text-on-veridt-blue">Termos de uso • Política de privacidade</p>
 		</div>
 	</div>
-	<div class="flex w-full flex-col gap-2.5 px-11">
-		<div>
-			<p class="text-[11px] text-on-white-tertiary">ACESSO À PLATAFORMA</p>
+	<div class="flex w-full flex-col gap-7 px-11">
+		<div class="flex flex-col">
+			<div class="flex flex-row justify-between">
+				<p class="text-[11px] text-on-white-tertiary">ACESSO À PLATAFORMA</p>
+				<div class="flex flex-row items-center gap-1.5">
+					<CircleQuestionMark class="size-4 text-on-white-tertiary" />
+					<p class="text-xs text-on-white-tertiary">Precisa de ajuda?</p>
+				</div>
+			</div>
 			<h2 class="text-on-white-main">Sua evidência começa aqui.</h2>
 			<p class="text-sm text-on-white-secondary">
 				Entre na sua conta ou crie um perfil para iniciar seus registros.
 			</p>
 		</div>
-		<div class="rounded-2xl border border-card-border bg-white"></div>
+		<div class="rounded-2xl border border-card-border bg-white">
+			<Tabs.Root value="login">
+				<Tabs.List>
+					<Tabs.Trigger class="ml-7 py-4.5" value="login">Entrar</Tabs.Trigger>
+					<Tabs.Trigger class="py-4.5" value="register">Cadastrar Usuário</Tabs.Trigger>
+				</Tabs.List>
+				<Tabs.Content value="login" class="p-7">
+					<div class="flex flex-col gap-4.75">
+						<div class="flex flex-col gap-1.5">
+							<h3 class="text-on-white-main">Bem-vindo de volta</h3>
+							<p class="text-xs leading-[150%] text-on-white-tertiary">
+								Use seu e-mail e senha para continuar.
+							</p>
+						</div>
+						<div class="flex flex-col gap-1.75">
+							<p class="text-xs font-semibold text-on-white-secondary">E-mail</p>
+						</div>
+						<div class="flex flex-col gap-1.75">
+							<p class="text-xs font-semibold text-on-white-secondary">Senha</p>
+						</div>
+						<div class="flex flex-col gap-1.75">
+							<p class="text-xs font-semibold text-on-white-main">
+								Esqueci minha senha / Recuperar Senha
+							</p>
+						</div>
+					</div>
+				</Tabs.Content>
+				<Tabs.Content value="register" class="p-7">
+					<p class="text-sm text-on-white-secondary">
+						Crie seu perfil para iniciar seus registros.
+					</p>
+				</Tabs.Content>
+			</Tabs.Root>
+		</div>
 	</div>
 </div>

@@ -25,7 +25,7 @@
 	let oabNumber = $state('');
 	let registerPassword = $state('');
 	let showRegisterPassword = $state(false);
-	let acceptedTerms = $state(true);
+	let acceptedTerms = $state(false);
 
 	const termsId = $props.id();
 </script>

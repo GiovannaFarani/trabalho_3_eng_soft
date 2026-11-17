@@ -36,7 +36,7 @@
 
 <div class="flex h-dvh flex-row overflow-hidden bg-[#f4f6f9]">
 	<aside
-		class="flex h-full w-56 shrink-0 flex-col justify-between bg-veridt-blue px-4.5 pt-6.75 pb-7"
+		class="flex h-full w-56 shrink-0 flex-col justify-between gap-8 overflow-y-auto bg-veridt-blue px-4.5 pt-6.75 pb-7"
 	>
 		<div class="flex flex-col gap-10.5">
 			<div class="flex flex-row items-center gap-2.5 pl-3">
@@ -45,7 +45,7 @@
 			</div>
 
 			<nav class="flex flex-col gap-2" aria-label="Área de trabalho">
-				<p class="px-3 text-[10px] font-semibold text-[#94a3b8]">ÁREA DE TRABALHO</p>
+				<p class="text-[10px] font-semibold text-[#94a3b8]">ÁREA DE TRABALHO</p>
 
 				{#each navItems as item (item.label)}
 					{@const Icon = item.icon}

@@ -95,7 +95,13 @@
 		<div
 			class="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-card-border bg-white"
 		>
-			<Tabs.Root value="login" class="min-h-0 flex-1">
+			<Tabs.Root
+				value="login"
+				class="min-h-0 flex-1"
+				onValueChange={(value) => {
+					if (value !== 'login') isRecoveringPassword = false;
+				}}
+			>
 				<Tabs.List class="shrink-0">
 					<Tabs.Trigger class="ml-7 py-4.5" value="login">Entrar</Tabs.Trigger>
 					<Tabs.Trigger class="py-4.5" value="register">Cadastrar Usuário</Tabs.Trigger>

@@ -10,13 +10,17 @@
 		ArrowRight,
 		Scale,
 		Info,
-		Shield
+		Shield,
+		KeyRound,
+		Mail
 	} from '@lucide/svelte';
 	import { Button, Checkbox, Label, RadioGroup, ScrollArea, Tabs, TextInput } from '#lib';
 
 	let email = $state('');
 	let password = $state('');
 	let showPassword = $state(false);
+	let isRecoveringPassword = $state(false);
+	let recoveryEmail = $state('');
 
 	let profileType = $state<'lawyer' | 'individual'>('lawyer');
 	let fullName = $state('');
@@ -102,54 +106,95 @@
 				</Tabs.List>
 				<Tabs.Content value="login" class="min-h-0 flex-1 flex-col data-[state=active]:flex">
 					<ScrollArea class="min-h-0 flex-1" viewportClass="p-7">
-						<form class="flex flex-col gap-4.75" onsubmit={(e) => e.preventDefault()}>
-							<div class="flex flex-col gap-1.5">
-								<h3 class="text-on-white-main">Bem-vindo de volta</h3>
-								<p class="text-xs leading-[150%] text-on-white-tertiary">
-									Use seu e-mail e senha para continuar.
-								</p>
-							</div>
-							<TextInput
-								label="E-mail"
-								type="email"
-								placeholder="fulano@exemplo.com.br"
-								autocomplete="email"
-								bind:value={email}
-							/>
-							<TextInput
-								label="Senha"
-								type={showPassword ? 'text' : 'password'}
-								placeholder="••••••••••••"
-								autocomplete="current-password"
-								bind:value={password}
+						{#if isRecoveringPassword}
+							<form
+								class="flex flex-col gap-4 rounded-xl border border-card-border bg-[#f8fafc] p-5"
+								onsubmit={(e) => e.preventDefault()}
 							>
-								{#snippet trailing()}
+								<div class="flex flex-row items-center gap-2.25">
+									<KeyRound class="size-4.5 text-on-white-main" />
+									<p class="text-[15px] text-on-white-main">Recuperar Senha</p>
+								</div>
+								<p class="text-xs leading-[160%] text-on-white-secondary">
+									Informe o e-mail da sua conta. Enviaremos um link para definir uma nova senha.
+								</p>
+								<TextInput
+									label="E-mail de recuperação"
+									type="email"
+									placeholder="fulano@exemplo.com.br"
+									autocomplete="email"
+									bind:value={recoveryEmail}
+								/>
+								<Button type="submit" variant="outline" class="w-full">
+									<Mail class="size-4" />
+									Enviar link de recuperação
+								</Button>
+								<Button
+									type="button"
+									variant="link"
+									size="sm"
+									class="self-start text-[11px]! font-normal! text-on-white-tertiary! hover:text-on-white-main!"
+									onclick={() => (isRecoveringPassword = false)}
+								>
+									Voltar para Entrar
+								</Button>
+							</form>
+						{:else}
+							<form class="flex flex-col gap-4.75" onsubmit={(e) => e.preventDefault()}>
+								<div class="flex flex-col gap-1.5">
+									<h3 class="text-on-white-main">Bem-vindo de volta</h3>
+									<p class="text-xs leading-[150%] text-on-white-tertiary">
+										Use seu e-mail e senha para continuar.
+									</p>
+								</div>
+								<TextInput
+									label="E-mail"
+									type="email"
+									placeholder="fulano@exemplo.com.br"
+									autocomplete="email"
+									bind:value={email}
+								/>
+								<TextInput
+									label="Senha"
+									type={showPassword ? 'text' : 'password'}
+									placeholder="••••••••••••"
+									autocomplete="current-password"
+									bind:value={password}
+								>
+									{#snippet trailing()}
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon"
+											class="text-on-white-tertiary hover:text-on-white-main"
+											aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+											onclick={() => (showPassword = !showPassword)}
+										>
+											{#if showPassword}
+												<Eye class="size-4" />
+											{:else}
+												<EyeOff class="size-4" />
+											{/if}
+										</Button>
+									{/snippet}
+								</TextInput>
+								<div class="flex flex-col gap-1.75">
 									<Button
 										type="button"
-										variant="ghost"
-										size="icon"
-										class="text-on-white-tertiary hover:text-on-white-main"
-										aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-										onclick={() => (showPassword = !showPassword)}
+										variant="link"
+										size="sm"
+										class="self-start"
+										onclick={() => (isRecoveringPassword = true)}
 									>
-										{#if showPassword}
-											<Eye class="size-4" />
-										{:else}
-											<EyeOff class="size-4" />
-										{/if}
+										Esqueci minha senha / Recuperar Senha
 									</Button>
-								{/snippet}
-							</TextInput>
-							<div class="flex flex-col gap-1.75">
-								<Button type="button" variant="link" size="sm" class="self-start">
-									Esqueci minha senha / Recuperar Senha
+								</div>
+								<Button type="submit" class="w-full">
+									<ArrowRight class="size-4" />
+									Entrar no Sistema
 								</Button>
-							</div>
-							<Button type="submit" class="w-full">
-								<ArrowRight class="size-4" />
-								Entrar no Sistema
-							</Button>
-						</form>
+							</form>
+						{/if}
 					</ScrollArea>
 				</Tabs.Content>
 				<Tabs.Content value="register" class="min-h-0 flex-1 flex-col data-[state=active]:flex">

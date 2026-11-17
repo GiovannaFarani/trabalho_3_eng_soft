@@ -4,16 +4,29 @@
 @theme {
 	--default-font-family: 'Inter', sans-serif;
 	--color-veridt-blue: #0f172a;
+	--color-veridt-blue-surface: #1e293b;
+	--color-veridt-blue-border: #334155;
 	--color-on-veridt-blue: #cbd5e1;
+	--color-on-veridt-blue-muted: #94a3b8;
 	--color-shield-green: #10b981;
+	--color-shield-green-light: #a7f3d0;
+	--color-surface-canvas: #f4f6f9;
+	--color-surface-subtle: #f8fafc;
 	--color-on-white-main: #0f172a;
+	--color-on-white-ink: #18243a;
 	--color-on-white-secondary: #475569;
 	--color-on-white-tertiary: #64748b;
 	--color-card-border: #e2e8f0;
+	--color-control-border: #cbd5e1;
+	--color-status-success: #047857;
+	--color-status-processing: #2563eb;
+	--color-status-processing-bg: #eff6ff;
+	--color-status-warning: #b45309;
+	--color-status-danger: #b91c1c;
 }
 
 body {
-	background-color: #f8fafc;
+	background-color: var(--color-surface-subtle);
 }
 
 h1 {

@@ -27,11 +27,11 @@
 		primary:
 			'border border-transparent bg-veridt-blue text-white hover:bg-veridt-blue/90 focus-visible:ring-veridt-blue/30',
 		secondary:
-			'border border-transparent bg-[#f4f6f9] text-on-white-main hover:bg-[#e2e8f0] focus-visible:ring-veridt-blue/20',
+			'border border-transparent bg-surface-canvas text-on-white-main hover:bg-card-border focus-visible:ring-veridt-blue/20',
 		outline:
-			'border border-card-border bg-white text-on-white-main hover:bg-[#f8fafc] focus-visible:ring-veridt-blue/20',
+			'border border-card-border bg-white text-on-white-main hover:bg-surface-subtle focus-visible:ring-veridt-blue/20',
 		ghost:
-			'border border-transparent bg-transparent text-on-white-secondary hover:bg-[#f4f6f9] hover:text-on-white-main focus-visible:ring-veridt-blue/20',
+			'border border-transparent bg-transparent text-on-white-secondary hover:bg-surface-canvas hover:text-on-white-main focus-visible:ring-veridt-blue/20',
 		link: 'bg-transparent text-on-white-main underline-offset-4 hover:underline focus-visible:ring-veridt-blue/20'
 	};
 

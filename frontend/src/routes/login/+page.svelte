@@ -53,28 +53,30 @@
 			</p>
 			<div class="flex flex-row justify-between py-6.25">
 				<div
-					class="size-20 content-center justify-items-center rounded-2xl border border-[#334155] bg-[#1E293B]"
+					class="size-20 content-center justify-items-center rounded-2xl border border-veridt-blue-border bg-veridt-blue-surface"
 				>
 					<ScanLine class="size-8.75 text-on-veridt-blue" />
 				</div>
 				<div
-					class="size-20 content-center justify-items-center rounded-2xl border border-[#334155] bg-[#1E293B]"
+					class="size-20 content-center justify-items-center rounded-2xl border border-veridt-blue-border bg-veridt-blue-surface"
 				>
 					<FingerprintPattern class="size-8.75 text-on-veridt-blue" />
 				</div>
 				<div
-					class="size-20 content-center justify-items-center rounded-2xl border border-[#334155] bg-[#1E293B]"
+					class="size-20 content-center justify-items-center rounded-2xl border border-veridt-blue-border bg-veridt-blue-surface"
 				>
 					<ShieldCheck class="size-8.75 text-shield-green" />
 				</div>
 			</div>
 			<div class="flex flex-row items-center gap-2">
 				<LockKeyhole class="size-4.5 text-shield-green" />
-				<p class="text-xs text-[#A7F3D0]">Preservação imutável. Verificação independente.</p>
+				<p class="text-xs text-shield-green-light">
+					Preservação imutável. Verificação independente.
+				</p>
 			</div>
 		</div>
 		<div>
-			<p class="text-[11px] text-[#94A3B8]">© 2026 Veridt</p>
+			<p class="text-[11px] text-on-veridt-blue-muted">© 2026 Veridt</p>
 			<p class="text-[11px] text-on-veridt-blue">Termos de uso • Política de privacidade</p>
 		</div>
 	</div>
@@ -114,7 +116,7 @@
 					<ScrollArea class="min-h-0 flex-1" viewportClass="p-7">
 						{#if isRecoveringPassword}
 							<form
-								class="flex flex-col gap-4 rounded-xl border border-card-border bg-[#f8fafc] p-5"
+								class="flex flex-col gap-4 rounded-xl border border-card-border bg-surface-subtle p-5"
 								onsubmit={(e) => e.preventDefault()}
 							>
 								<div class="flex flex-row items-center gap-2.25">
@@ -254,7 +256,7 @@
 										label="Número da OAB"
 										type="text"
 										placeholder="45.678 / BA"
-										class="border-[#2563eb]! bg-[#eff6ff]! focus:border-[#2563eb]! focus:ring-[#2563eb]/15!"
+										class="border-status-processing! bg-status-processing-bg! focus:border-status-processing! focus:ring-status-processing/15!"
 										bind:value={oabNumber}
 									/>
 								{/if}
@@ -262,8 +264,8 @@
 
 							{#if profileType === 'lawyer'}
 								<div class="flex flex-row items-center gap-1.75">
-									<Info class="size-3.25 shrink-0 text-[#2563eb]" />
-									<p class="text-[11px] text-[#2563eb]">
+									<Info class="size-3.25 shrink-0 text-status-processing" />
+									<p class="text-[11px] text-status-processing">
 										Número da OAB obrigatório para o perfil Advogado.
 									</p>
 								</div>

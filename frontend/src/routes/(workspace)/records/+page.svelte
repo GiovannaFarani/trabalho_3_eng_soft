@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CircleAlert, CirclePlay, FileCheck2, LoaderCircle, Plus } from '@lucide/svelte';
+	import { CircleAlert, CirclePlay, FileCheckCorner, LoaderCircle, Plus } from '@lucide/svelte';
 	import { Button } from '#lib';
 
 	const metrics = [
@@ -7,29 +7,29 @@
 			title: 'Registros concluídos',
 			value: '03',
 			description: 'Prontos para consulta',
-			icon: FileCheck2,
-			iconClass: 'text-[#047857]'
+			icon: FileCheckCorner,
+			iconClass: 'text-status-success'
 		},
 		{
 			title: 'Em processamento',
 			value: '01',
 			description: 'Preparando as evidências',
 			icon: LoaderCircle,
-			iconClass: 'text-[#2563eb]'
+			iconClass: 'text-status-processing'
 		},
 		{
 			title: 'Sessões iniciadas',
 			value: '01',
 			description: 'Gravação em andamento',
 			icon: CirclePlay,
-			iconClass: 'text-[#b45309]'
+			iconClass: 'text-status-warning'
 		},
 		{
 			title: 'Falhas com estorno',
 			value: '01',
 			description: 'Crédito devolvido ao saldo',
 			icon: CircleAlert,
-			iconClass: 'text-[#b91c1c]'
+			iconClass: 'text-status-danger'
 		}
 	] as const;
 </script>
@@ -67,7 +67,7 @@
 					<p class="text-[30px] leading-tight font-normal text-on-white-main">{metric.value}</p>
 					<p class="text-[10px] text-on-white-tertiary">{metric.description}</p>
 				</div>
-				<Icon class="size-[21px] shrink-0 {metric.iconClass}" />
+				<Icon class="size-5.25 shrink-0 {metric.iconClass}" />
 			</div>
 		{/each}
 	</section>

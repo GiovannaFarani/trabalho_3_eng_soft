@@ -15,7 +15,7 @@
 	bind:value
 	bind:ref
 	{orientation}
-	class="flex flex-row gap-1 rounded-lg bg-[#f4f6f9] p-1 {className}"
+	class="flex flex-row gap-1 rounded-lg bg-surface-canvas p-1 {className}"
 	{...rest}
 >
 	{@render children?.()}

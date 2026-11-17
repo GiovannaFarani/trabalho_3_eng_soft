@@ -34,7 +34,7 @@
 	] as const;
 </script>
 
-<div class="flex h-dvh flex-row overflow-hidden bg-[#f4f6f9]">
+<div class="flex h-dvh flex-row overflow-hidden bg-surface-canvas">
 	<aside
 		class="flex h-full w-56 shrink-0 flex-col justify-between gap-8 overflow-y-auto bg-veridt-blue px-4.5 pt-6.75 pb-7"
 	>
@@ -45,7 +45,7 @@
 			</div>
 
 			<nav class="flex flex-col gap-2" aria-label="Área de trabalho">
-				<p class="text-[10px] font-semibold text-[#94a3b8]">ÁREA DE TRABALHO</p>
+				<p class="text-[10px] font-semibold text-on-veridt-blue-muted">ÁREA DE TRABALHO</p>
 
 				{#each navItems as item (item.label)}
 					{@const Icon = item.icon}
@@ -54,8 +54,8 @@
 						<a
 							href={item.href}
 							class="flex h-11.5 flex-row items-center gap-2.75 rounded-lg px-3 text-[13px] transition-colors {isActive
-								? 'bg-[#1e293b] font-semibold text-white'
-								: 'font-normal text-on-veridt-blue hover:bg-[#1e293b]/60 hover:text-white'}"
+								? 'bg-veridt-blue-surface font-semibold text-white'
+								: 'font-normal text-on-veridt-blue hover:bg-veridt-blue-surface/60 hover:text-white'}"
 						>
 							<Icon class="size-4.5 shrink-0" />
 							<span>{item.label}</span>
@@ -63,7 +63,7 @@
 					{:else}
 						<button
 							type="button"
-							class="flex h-11.5 cursor-pointer flex-row items-center gap-2.75 rounded-lg px-3 text-left text-[13px] font-normal text-on-veridt-blue transition-colors hover:bg-[#1e293b]/60 hover:text-white"
+							class="flex h-11.5 cursor-pointer flex-row items-center gap-2.75 rounded-lg px-3 text-left text-[13px] font-normal text-on-veridt-blue transition-colors hover:bg-veridt-blue-surface/60 hover:text-white"
 						>
 							<Icon class="size-4.5 shrink-0" />
 							<span>{item.label}</span>
@@ -74,7 +74,7 @@
 		</div>
 
 		<div class="flex flex-col gap-5.5">
-			<div class="flex flex-col gap-2.25 rounded-lg bg-[#1e293b] p-3.75">
+			<div class="flex flex-col gap-2.25 rounded-lg bg-veridt-blue-surface p-3.75">
 				<ShieldCheck class="size-5.75 text-shield-green" />
 				<p class="text-xs font-semibold text-white">Integridade por padrão</p>
 				<p class="text-[11px] leading-[160%] text-on-veridt-blue">
@@ -90,7 +90,7 @@
 				<span>Central de ajuda</span>
 			</button>
 
-			<p class="text-[10px] text-[#94a3b8]">VERIDT • AMBIENTE SEGURO</p>
+			<p class="text-[10px] text-on-veridt-blue-muted">VERIDT • AMBIENTE SEGURO</p>
 		</div>
 	</aside>
 
@@ -104,17 +104,17 @@
 			</div>
 
 			<div class="flex flex-row items-center gap-5.5">
-				<div class="rounded-md bg-[#f8fafc] px-2.5 py-1.5 text-[11px] text-on-white-secondary">
+				<div class="rounded-md bg-surface-subtle px-2.5 py-1.5 text-[11px] text-on-white-secondary">
 					Saldo: 12 Créditos
 				</div>
 
 				<div class="flex flex-row items-center gap-2.5">
 					<div
-						class="flex size-8.25 items-center justify-center rounded-full bg-[#f8fafc] text-[11px] text-on-white-main"
+						class="flex size-8.25 items-center justify-center rounded-full bg-surface-subtle text-[11px] text-on-white-main"
 					>
 						FS
 					</div>
-					<span class="text-xs text-[#18243a]">Dr. Fulano da Silva - OAB/BA</span>
+					<span class="text-xs text-on-white-ink">Dr. Fulano da Silva - OAB/BA</span>
 				</div>
 
 				<a

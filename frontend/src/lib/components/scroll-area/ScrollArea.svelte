@@ -43,7 +43,7 @@
 			class="absolute flex w-2.5 touch-none p-0.5 transition-colors select-none {scrollbarClass}"
 		>
 			<BitsScrollArea.Thumb
-				class="relative flex-1 rounded-full bg-[#cbd5e1] transition-colors hover:bg-on-white-tertiary"
+				class="relative flex-1 rounded-full bg-control-border transition-colors hover:bg-on-white-tertiary"
 			/>
 		</BitsScrollArea.Scrollbar>
 	{/if}
@@ -54,7 +54,7 @@
 			class="absolute flex h-2.5 touch-none flex-col p-0.5 transition-colors select-none {scrollbarClass}"
 		>
 			<BitsScrollArea.Thumb
-				class="relative flex-1 rounded-full bg-[#cbd5e1] transition-colors hover:bg-on-white-tertiary"
+				class="relative flex-1 rounded-full bg-control-border transition-colors hover:bg-on-white-tertiary"
 			/>
 		</BitsScrollArea.Scrollbar>
 	{/if}

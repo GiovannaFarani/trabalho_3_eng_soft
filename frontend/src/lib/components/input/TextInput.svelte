@@ -64,7 +64,7 @@
 			{type}
 			aria-invalid={error ? true : undefined}
 			aria-describedby={messageId}
-			class="peer h-11 w-full rounded-lg border bg-white text-[13px] font-normal text-[#18243a] transition-colors duration-150 placeholder:text-on-white-tertiary focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-[#f8fafc] disabled:opacity-60 {leading
+			class="peer h-11 w-full rounded-lg border bg-white text-[13px] font-normal text-on-white-ink transition-colors duration-150 placeholder:text-on-white-tertiary focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:opacity-60 {leading
 				? 'pl-9'
 				: 'pl-3'} {trailing ? 'pr-10' : 'pr-3'} {error
 				? 'border-red-500 focus:border-red-500 focus:ring-red-500/15'

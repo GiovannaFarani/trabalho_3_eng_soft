@@ -43,7 +43,10 @@
 			<div class="veridt-text text-white">veridt</div>
 		</div>
 		<div class="flex flex-col gap-7">
-			<p class="text-[11px] text-on-veridt-blue">EVIDÊNCIA. INTEGRIDADE. CONFIANÇA.</p>
+			<div class="flex flex-row items-center gap-2">
+				<div class="h-0.5 w-6 shrink-0 bg-on-veridt-blue-muted"></div>
+				<p class="text-[11px] text-on-veridt-blue">EVIDÊNCIA. INTEGRIDADE. CONFIANÇA.</p>
+			</div>
 			<h1 class="text-white">
 				Provas Digitais com Validade Jurídica e Imutabilidade WORM - SHA-256
 			</h1>
@@ -75,19 +78,36 @@
 				</p>
 			</div>
 		</div>
-		<div>
+		<div class="flex flex-col gap-3">
 			<p class="text-[11px] text-on-veridt-blue-muted">© 2026 Veridt</p>
-			<p class="text-[11px] text-on-veridt-blue">Termos de uso • Política de privacidade</p>
+			<div class="flex flex-row items-center gap-2 text-[11px] text-on-veridt-blue">
+				<button
+					type="button"
+					class="cursor-pointer underline-offset-4 transition-colors hover:text-white hover:underline"
+				>
+					Termos de uso
+				</button>
+				<span aria-hidden="true">•</span>
+				<button
+					type="button"
+					class="cursor-pointer underline-offset-4 transition-colors hover:text-white hover:underline"
+				>
+					Política de privacidade
+				</button>
+			</div>
 		</div>
 	</div>
 	<div class="flex h-full min-w-0 flex-1 flex-col gap-7 overflow-hidden px-11 pt-13 pb-8">
 		<div class="flex shrink-0 flex-col">
 			<div class="flex flex-row justify-between">
 				<p class="text-[11px] text-on-white-tertiary">ACESSO À PLATAFORMA</p>
-				<div class="flex flex-row items-center gap-1.5">
-					<CircleQuestionMark class="size-4 text-on-white-tertiary" />
-					<p class="text-xs text-on-white-tertiary">Precisa de ajuda?</p>
-				</div>
+				<button
+					type="button"
+					class="flex cursor-pointer flex-row items-center gap-1.5 text-xs text-on-white-secondary underline-offset-4 transition-colors hover:text-on-white-main hover:underline"
+				>
+					<CircleQuestionMark class="size-4" />
+					<span>Precisa de ajuda?</span>
+				</button>
 			</div>
 			<h2 class="text-on-white-main">Sua evidência começa aqui.</h2>
 			<p class="text-sm text-on-white-secondary">
@@ -300,7 +320,23 @@
 							<div class="flex flex-row items-center gap-2.25">
 								<Checkbox id={termsId} bind:checked={acceptedTerms} />
 								<Label for={termsId} variant="inline">
-									Li e aceito os Termos de Uso e a Política de Privacidade da Veridt.
+									Li e aceito os
+									<button
+										type="button"
+										class="inline cursor-pointer font-semibold text-on-white-main underline-offset-4 hover:underline"
+										onclick={(e) => e.stopPropagation()}
+									>
+										Termos de Uso
+									</button>
+									e a
+									<button
+										type="button"
+										class="inline cursor-pointer font-semibold text-on-white-main underline-offset-4 hover:underline"
+										onclick={(e) => e.stopPropagation()}
+									>
+										Política de Privacidade
+									</button>
+									da Veridt.
 								</Label>
 							</div>
 

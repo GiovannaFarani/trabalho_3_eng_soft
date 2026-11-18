@@ -1,6 +1,19 @@
 <script lang="ts">
-	import { CircleAlert, CirclePlay, FileCheckCorner, LoaderCircle, Plus } from '@lucide/svelte';
-	import { Button } from '#lib';
+	import {
+		CalendarDays,
+		ChevronDown,
+		CircleAlert,
+		CirclePlay,
+		FileCheckCorner,
+		LoaderCircle,
+		Plus,
+		RefreshCw,
+		Search,
+		SlidersHorizontal
+	} from '@lucide/svelte';
+	import { Button, TextInput } from '#lib';
+
+	let searchQuery = $state('');
 
 	const metrics = [
 		{
@@ -70,5 +83,55 @@
 				<Icon class="size-5.25 shrink-0 {metric.iconClass}" />
 			</div>
 		{/each}
+	</section>
+
+	<section
+		class="flex flex-col rounded-xl border border-card-border bg-white"
+		aria-label="Registros"
+	>
+		<div class="flex flex-row items-center justify-between px-5 pt-5.5 pb-4.5">
+			<div class="flex flex-row items-center gap-2.5">
+				<h2 class="text-base! font-normal! text-on-white-main">Todos os registros</h2>
+				<span
+					class="rounded-md bg-surface-subtle px-2.5 py-1.5 text-[11px] text-on-white-secondary"
+				>
+					6 registros
+				</span>
+			</div>
+
+			<div class="flex flex-row items-center gap-1.75 text-[11px] text-on-white-tertiary">
+				<RefreshCw class="size-3.5" />
+				<span>Atualizado às 10:16:14</span>
+			</div>
+		</div>
+
+		<div class="flex flex-row flex-wrap items-center gap-3 px-5 pb-5">
+			<TextInput
+				type="search"
+				placeholder="Buscar por título, URL ou ID do registro"
+				bind:value={searchQuery}
+				wrapperClass="flex-1 min-w-[260px]"
+				class="h-11.5!"
+			>
+				{#snippet leading()}
+					<Search class="size-4" />
+				{/snippet}
+			</TextInput>
+
+			<Button type="button" variant="outline">
+				<ChevronDown class="size-4" />
+				<span>Status: Todos</span>
+			</Button>
+
+			<Button type="button" variant="outline">
+				<CalendarDays class="size-4" />
+				<span>20/10/2026 – 22/10/2026</span>
+			</Button>
+
+			<Button type="button" variant="outline">
+				<SlidersHorizontal class="size-4" />
+				<span>Filtrar</span>
+			</Button>
+		</div>
 	</section>
 </div>

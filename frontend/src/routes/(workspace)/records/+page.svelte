@@ -26,7 +26,6 @@
 		detailsSummary: string;
 		detailsMeta: string;
 		status: 'INICIADO' | 'PROCESSANDO' | 'CONCLUIDO' | 'FALHA - Crédito Estornado';
-		isActive?: boolean;
 	}
 
 	let searchQuery = $state('');
@@ -85,8 +84,7 @@
 			endTime: '09:35:24',
 			detailsSummary: '1 vídeo • 4 imagens',
 			detailsMeta: '00:03:14 • 48.5 MB',
-			status: 'CONCLUIDO',
-			isActive: true
+			status: 'CONCLUIDO'
 		},
 		{
 			id: 'VRD-2026-0103',
@@ -138,21 +136,28 @@
 		}
 	];
 
-	const statusStyles: Record<EvidenceRecord['status'], { bg: string; text: string }> = {
+	const statusStyles: Record<
+		EvidenceRecord['status'],
+		{ bg: string; border: string; text: string }
+	> = {
 		INICIADO: {
 			bg: 'bg-amber-50',
+			border: 'border-amber-200',
 			text: 'text-status-warning'
 		},
 		PROCESSANDO: {
 			bg: 'bg-status-processing-bg',
+			border: 'border-blue-200',
 			text: 'text-status-processing'
 		},
 		CONCLUIDO: {
 			bg: 'bg-emerald-50',
+			border: 'border-emerald-200',
 			text: 'text-status-success'
 		},
 		'FALHA - Crédito Estornado': {
 			bg: 'bg-red-50',
+			border: 'border-red-200',
 			text: 'text-status-danger'
 		}
 	};
@@ -233,7 +238,7 @@
 				type="search"
 				placeholder="Buscar por título, URL ou ID do registro"
 				bind:value={searchQuery}
-				wrapperClass="flex-1 min-w-[260px]"
+				wrapperClass="flex-1 min-w-65"
 				class="h-11.5!"
 			>
 				{#snippet leading()}
@@ -274,9 +279,7 @@
 				{#each filteredRecords as record (record.id)}
 					{@const style = statusStyles[record.status]}
 					<div
-						class="flex flex-row items-center gap-3 border-b border-card-border px-4 py-4.75 text-xs transition-colors hover:bg-surface-subtle/60 {record.isActive
-							? 'border-l-3 border-l-status-processing bg-[#f8fbff]'
-							: 'bg-white'}"
+						class="flex flex-row items-center gap-3 border-b border-card-border bg-white px-4 py-4.75 text-xs transition-[background-color,box-shadow] duration-150 hover:bg-row-hover hover:shadow-[inset_3px_0_0_0_var(--color-status-processing)]"
 					>
 						<!-- ID do Registro -->
 						<div class="w-34 shrink-0 font-mono text-[11px] text-on-white-secondary">
@@ -314,7 +317,7 @@
 						<!-- Status -->
 						<div class="w-47.5 shrink-0">
 							<span
-								class="inline-flex items-center rounded-md px-2.5 py-1.5 text-[11px] font-medium {style.bg} {style.text}"
+								class="inline-flex items-center rounded-md border px-2.5 py-1.5 text-[11px] font-medium {style.bg} {style.border} {style.text}"
 							>
 								{record.status}
 							</span>

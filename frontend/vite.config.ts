@@ -5,6 +5,22 @@ import adapter from '@sveltejs/adapter-auto';
 import { sveltekit } from '@sveltejs/kit/vite';
 
 export default defineConfig({
+	server: {
+		proxy: {
+			'/api/auth': {
+				target: 'http://localhost:3001',
+				changeOrigin: true
+			}
+		}
+	},
+	preview: {
+		proxy: {
+			'/api/auth': {
+				target: 'http://localhost:3001',
+				changeOrigin: true
+			}
+		}
+	},
 	plugins: [
 		tailwindcss(),
 		sveltekit({

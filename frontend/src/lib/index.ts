@@ -20,3 +20,24 @@ export {
 	type TextInputProps,
 	type TextInputType
 } from './components/input/index.ts';
+export {
+	ApiError,
+	CORRELATION_ID_HEADER,
+	createHttpClient,
+	type ApiResponse,
+	type HttpClient,
+	type HttpClientConfig,
+	type RequestOptions
+} from './api/httpClient.ts';
+export {
+	createPasswordRecoveryClient,
+	coreAuthHttpClient,
+	isStrongPassword,
+	PASSWORD_RULE_MESSAGE,
+	passwordRecoveryClient,
+	STRONG_PASSWORD_REGEX,
+	type ForgotPasswordRequest,
+	type MessageResponse,
+	type PasswordRecoveryClient,
+	type ResetPasswordRequest
+} from './api/coreAuthClient.ts';

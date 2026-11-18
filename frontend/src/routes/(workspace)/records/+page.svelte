@@ -2,6 +2,7 @@
 	import {
 		ArrowUpRight,
 		CalendarDays,
+		Check,
 		ChevronDown,
 		CircleAlert,
 		CirclePlay,
@@ -13,7 +14,8 @@
 		Search,
 		SlidersHorizontal
 	} from '@lucide/svelte';
-	import { Button, TextInput } from '#lib';
+	import { Pagination, Popover, Select } from 'bits-ui';
+	import { Button, Label, TextInput } from '#lib';
 
 	interface EvidenceRecord {
 		id: string;
@@ -28,7 +30,41 @@
 		status: 'INICIADO' | 'PROCESSANDO' | 'CONCLUIDO' | 'FALHA - Crédito Estornado';
 	}
 
+	type StatusFilter = 'ALL' | EvidenceRecord['status'];
+	type SortOption = 'newest' | 'oldest' | 'title';
+	type CompletionFilter = 'all' | 'finished' | 'unfinished';
+
+	const DEFAULT_START_DATE = '2026-10-20';
+	const DEFAULT_END_DATE = '2026-10-22';
+
 	let searchQuery = $state('');
+	let statusFilter = $state<StatusFilter>('ALL');
+	let startDateFilter = $state(DEFAULT_START_DATE);
+	let endDateFilter = $state(DEFAULT_END_DATE);
+	let sortBy = $state<SortOption>('newest');
+	let completionFilter = $state<CompletionFilter>('all');
+	let currentPage = $state(1);
+	let perPage = $state(5);
+
+	let datePopoverOpen = $state(false);
+	let filterPopoverOpen = $state(false);
+
+	const statusOptions: { value: StatusFilter; label: string }[] = [
+		{ value: 'ALL', label: 'Todos' },
+		{ value: 'INICIADO', label: 'Iniciado' },
+		{ value: 'PROCESSANDO', label: 'Processando' },
+		{ value: 'CONCLUIDO', label: 'Concluído' },
+		{ value: 'FALHA - Crédito Estornado', label: 'Falha - Crédito Estornado' }
+	];
+
+	const perPageOptions = ['4', '5', '6', '10'];
+
+	const datePresets = [
+		{ label: '20/10/2026 – 22/10/2026', start: '2026-10-20', end: '2026-10-22' },
+		{ label: '22/10/2026', start: '2026-10-22', end: '2026-10-22' },
+		{ label: '21/10/2026', start: '2026-10-21', end: '2026-10-21' },
+		{ label: 'Todas as datas', start: '', end: '' }
+	] as const;
 
 	const metrics = [
 		{
@@ -162,17 +198,98 @@
 		}
 	};
 
-	const filteredRecords = $derived(
-		records.filter((record) => {
-			if (!searchQuery.trim()) return true;
-			const query = searchQuery.toLowerCase();
-			return (
-				record.id.toLowerCase().includes(query) ||
-				record.title.toLowerCase().includes(query) ||
-				record.url.toLowerCase().includes(query)
-			);
-		})
+	function toIsoDate(brDate: string): string {
+		const [day, month, year] = brDate.split('/');
+		return `${year}-${month}-${day}`;
+	}
+
+	function formatBrDate(isoDate: string): string {
+		const [year, month, day] = isoDate.split('-');
+		return `${day}/${month}/${year}`;
+	}
+
+	const selectedStatusLabel = $derived(
+		statusOptions.find((option) => option.value === statusFilter)?.label ?? 'Todos'
 	);
+
+	const dateRangeLabel = $derived.by(() => {
+		if (startDateFilter && endDateFilter) {
+			return startDateFilter === endDateFilter
+				? formatBrDate(startDateFilter)
+				: `${formatBrDate(startDateFilter)} – ${formatBrDate(endDateFilter)}`;
+		}
+		if (startDateFilter) return `A partir de ${formatBrDate(startDateFilter)}`;
+		if (endDateFilter) return `Até ${formatBrDate(endDateFilter)}`;
+		return 'Todas as datas';
+	});
+
+	const extraFiltersCount = $derived(
+		(sortBy !== 'newest' ? 1 : 0) + (completionFilter !== 'all' ? 1 : 0)
+	);
+
+	const hasAnyActiveFilter = $derived(
+		searchQuery.trim() !== '' ||
+			statusFilter !== 'ALL' ||
+			startDateFilter !== DEFAULT_START_DATE ||
+			endDateFilter !== DEFAULT_END_DATE ||
+			sortBy !== 'newest' ||
+			completionFilter !== 'all'
+	);
+
+	const filteredRecords = $derived.by(() => {
+		const query = searchQuery.trim().toLowerCase();
+
+		const matches = records.filter((record) => {
+			if (query) {
+				const matchesQuery =
+					record.id.toLowerCase().includes(query) ||
+					record.title.toLowerCase().includes(query) ||
+					record.url.toLowerCase().includes(query);
+				if (!matchesQuery) return false;
+			}
+
+			if (statusFilter !== 'ALL' && record.status !== statusFilter) {
+				return false;
+			}
+
+			const recordIsoDate = toIsoDate(record.startDate);
+			if (startDateFilter && recordIsoDate < startDateFilter) return false;
+			if (endDateFilter && recordIsoDate > endDateFilter) return false;
+
+			if (completionFilter === 'finished' && !record.endDate) return false;
+			if (completionFilter === 'unfinished' && record.endDate) return false;
+
+			return true;
+		});
+
+		return [...matches].sort((a, b) => {
+			if (sortBy === 'title') {
+				return a.title.localeCompare(b.title, 'pt-BR');
+			}
+			const aTimestamp = `${toIsoDate(a.startDate)}T${a.startTime}`;
+			const bTimestamp = `${toIsoDate(b.startDate)}T${b.startTime}`;
+			return sortBy === 'oldest'
+				? aTimestamp.localeCompare(bTimestamp)
+				: bTimestamp.localeCompare(aTimestamp);
+		});
+	});
+
+	const totalPages = $derived(Math.max(1, Math.ceil(filteredRecords.length / perPage)));
+	const safePage = $derived(Math.min(currentPage, totalPages));
+
+	const paginatedRecords = $derived(
+		filteredRecords.slice((safePage - 1) * perPage, safePage * perPage)
+	);
+
+	function resetAllFilters() {
+		searchQuery = '';
+		statusFilter = 'ALL';
+		startDateFilter = DEFAULT_START_DATE;
+		endDateFilter = DEFAULT_END_DATE;
+		sortBy = 'newest';
+		completionFilter = 'all';
+		currentPage = 1;
+	}
 </script>
 
 <div class="flex flex-col gap-7">
@@ -223,7 +340,8 @@
 				<span
 					class="rounded-md bg-surface-subtle px-2.5 py-1.5 text-[11px] text-on-white-secondary"
 				>
-					{filteredRecords.length} registros
+					{filteredRecords.length}
+					{filteredRecords.length === 1 ? 'registro' : 'registros'}
 				</span>
 			</div>
 
@@ -238,6 +356,7 @@
 				type="search"
 				placeholder="Buscar por título, URL ou ID do registro"
 				bind:value={searchQuery}
+				oninput={() => (currentPage = 1)}
 				wrapperClass="flex-1 min-w-65"
 				class="h-11.5!"
 			>
@@ -246,20 +365,224 @@
 				{/snippet}
 			</TextInput>
 
-			<Button type="button" variant="outline">
-				<ChevronDown class="size-4" />
-				<span>Status: Todos</span>
-			</Button>
+			<Select.Root
+				type="single"
+				items={statusOptions}
+				bind:value={statusFilter}
+				onValueChange={() => (currentPage = 1)}
+			>
+				<Select.Trigger>
+					{#snippet child({ props })}
+						<Button {...props} variant="outline" class="justify-between">
+							<ChevronDown class="size-4 text-on-white-secondary" />
+							<span>Status: {selectedStatusLabel}</span>
+						</Button>
+					{/snippet}
+				</Select.Trigger>
+				<Select.Portal>
+					<Select.Content
+						sideOffset={6}
+						align="end"
+						class="z-50 min-w-56 rounded-xl border border-card-border bg-white p-1.5 shadow-lg"
+					>
+						<Select.Viewport class="flex flex-col gap-0.5">
+							{#each statusOptions as option (option.value)}
+								<Select.Item
+									value={option.value}
+									label={option.label}
+									class="flex cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs text-on-white-main transition-colors outline-none data-highlighted:bg-surface-subtle data-selected:bg-surface-canvas data-selected:font-semibold"
+								>
+									{#snippet children({ selected })}
+										<span>{option.label}</span>
+										{#if selected}
+											<Check class="size-3.5 text-status-processing" />
+										{/if}
+									{/snippet}
+								</Select.Item>
+							{/each}
+						</Select.Viewport>
+					</Select.Content>
+				</Select.Portal>
+			</Select.Root>
 
-			<Button type="button" variant="outline">
-				<CalendarDays class="size-4" />
-				<span>20/10/2026 – 22/10/2026</span>
-			</Button>
+			<Popover.Root bind:open={datePopoverOpen}>
+				<Popover.Trigger>
+					{#snippet child({ props })}
+						<Button {...props} variant="outline">
+							<CalendarDays class="size-4 text-on-white-secondary" />
+							<span>{dateRangeLabel}</span>
+						</Button>
+					{/snippet}
+				</Popover.Trigger>
+				<Popover.Portal>
+					<Popover.Content
+						sideOffset={6}
+						align="end"
+						class="z-50 flex w-80 flex-col gap-4 rounded-xl border border-card-border bg-white p-4 shadow-lg"
+					>
+						<div class="flex flex-col gap-2">
+							<p class="text-xs font-semibold text-on-white-main">Período de captura</p>
+							<div class="flex flex-wrap gap-1.5">
+								{#each datePresets as preset (preset.label)}
+									{@const isSelected =
+										startDateFilter === preset.start && endDateFilter === preset.end}
+									<button
+										type="button"
+										onclick={() => {
+											startDateFilter = preset.start;
+											endDateFilter = preset.end;
+											currentPage = 1;
+										}}
+										class="cursor-pointer rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors {isSelected
+											? 'border-veridt-blue bg-veridt-blue text-white'
+											: 'border-card-border bg-surface-subtle text-on-white-secondary hover:bg-surface-canvas hover:text-on-white-main'}"
+									>
+										{preset.label}
+									</button>
+								{/each}
+							</div>
+						</div>
 
-			<Button type="button" variant="outline">
-				<SlidersHorizontal class="size-4" />
-				<span>Filtrar</span>
-			</Button>
+						<div class="grid grid-cols-2 gap-3">
+							<div class="flex flex-col gap-1.5">
+								<Label for="filter-start-date">Data inicial</Label>
+								<input
+									id="filter-start-date"
+									type="date"
+									bind:value={startDateFilter}
+									max={endDateFilter || undefined}
+									onchange={() => (currentPage = 1)}
+									class="h-9.5 rounded-lg border border-card-border bg-white px-2.5 text-xs text-on-white-ink outline-none focus:border-veridt-blue focus:ring-2 focus:ring-veridt-blue/15"
+								/>
+							</div>
+							<div class="flex flex-col gap-1.5">
+								<Label for="filter-end-date">Data final</Label>
+								<input
+									id="filter-end-date"
+									type="date"
+									bind:value={endDateFilter}
+									min={startDateFilter || undefined}
+									onchange={() => (currentPage = 1)}
+									class="h-9.5 rounded-lg border border-card-border bg-white px-2.5 text-xs text-on-white-ink outline-none focus:border-veridt-blue focus:ring-2 focus:ring-veridt-blue/15"
+								/>
+							</div>
+						</div>
+
+						<div
+							class="flex flex-row items-center justify-between border-t border-card-border pt-3"
+						>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								onclick={() => {
+									startDateFilter = '';
+									endDateFilter = '';
+									currentPage = 1;
+								}}
+							>
+								Limpar datas
+							</Button>
+							<Button type="button" size="sm" onclick={() => (datePopoverOpen = false)}>
+								Aplicar
+							</Button>
+						</div>
+					</Popover.Content>
+				</Popover.Portal>
+			</Popover.Root>
+
+			<Popover.Root bind:open={filterPopoverOpen}>
+				<Popover.Trigger>
+					{#snippet child({ props })}
+						<Button {...props} variant="outline">
+							<SlidersHorizontal class="size-4 text-on-white-secondary" />
+							<span>Filtrar</span>
+							{#if extraFiltersCount > 0}
+								<span
+									class="flex size-4.5 items-center justify-center rounded-full bg-veridt-blue text-[10px] font-semibold text-white"
+								>
+									{extraFiltersCount}
+								</span>
+							{/if}
+						</Button>
+					{/snippet}
+				</Popover.Trigger>
+				<Popover.Portal>
+					<Popover.Content
+						sideOffset={6}
+						align="end"
+						class="z-50 flex w-72 flex-col gap-4 rounded-xl border border-card-border bg-white p-4 shadow-lg"
+					>
+						<div class="flex flex-col gap-2">
+							<p class="text-xs font-semibold text-on-white-main">Ordenação</p>
+							<div class="flex flex-col gap-1">
+								{#each [{ value: 'newest', label: 'Mais recentes primeiro' }, { value: 'oldest', label: 'Mais antigos primeiro' }, { value: 'title', label: 'Título (A–Z)' }] as item (item.value)}
+									<button
+										type="button"
+										onclick={() => {
+											sortBy = item.value as SortOption;
+											currentPage = 1;
+										}}
+										class="flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-left text-xs transition-colors {sortBy ===
+										item.value
+											? 'bg-surface-canvas font-semibold text-on-white-main'
+											: 'text-on-white-secondary hover:bg-surface-subtle hover:text-on-white-main'}"
+									>
+										<span>{item.label}</span>
+										{#if sortBy === item.value}
+											<Check class="size-3.5 text-status-processing" />
+										{/if}
+									</button>
+								{/each}
+							</div>
+						</div>
+
+						<div class="flex flex-col gap-2 border-t border-card-border pt-3">
+							<p class="text-xs font-semibold text-on-white-main">Finalização da captura</p>
+							<div class="flex flex-col gap-1">
+								{#each [{ value: 'all', label: 'Todos os registros' }, { value: 'finished', label: 'Apenas com Data/Hora Fim' }, { value: 'unfinished', label: 'Em andamento ou falha' }] as item (item.value)}
+									<button
+										type="button"
+										onclick={() => {
+											completionFilter = item.value as CompletionFilter;
+											currentPage = 1;
+										}}
+										class="flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-left text-xs transition-colors {completionFilter ===
+										item.value
+											? 'bg-surface-canvas font-semibold text-on-white-main'
+											: 'text-on-white-secondary hover:bg-surface-subtle hover:text-on-white-main'}"
+									>
+										<span>{item.label}</span>
+										{#if completionFilter === item.value}
+											<Check class="size-3.5 text-status-processing" />
+										{/if}
+									</button>
+								{/each}
+							</div>
+						</div>
+
+						<div
+							class="flex flex-row items-center justify-between border-t border-card-border pt-3"
+						>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								disabled={!hasAnyActiveFilter}
+								onclick={() => {
+									resetAllFilters();
+									filterPopoverOpen = false;
+								}}
+							>
+								Limpar tudo
+							</Button>
+							<Button type="button" size="sm" onclick={() => (filterPopoverOpen = false)}>
+								Fechar
+							</Button>
+						</div>
+					</Popover.Content>
+				</Popover.Portal>
+			</Popover.Root>
 		</div>
 
 		<div class="overflow-x-auto">
@@ -276,83 +599,178 @@
 					<span class="w-37.5 shrink-0">Ações</span>
 				</div>
 
-				{#each filteredRecords as record (record.id)}
-					{@const style = statusStyles[record.status]}
+				{#if paginatedRecords.length === 0}
 					<div
-						class="flex flex-row items-center gap-3 border-b border-card-border bg-white px-4 py-4.75 text-xs transition-[background-color,box-shadow] duration-150 hover:bg-row-hover hover:shadow-[inset_3px_0_0_0_var(--color-status-processing)]"
+						class="flex flex-col items-center justify-center gap-3 border-b border-card-border px-4 py-12 text-center"
 					>
-						<!-- ID do Registro -->
-						<div class="w-34 shrink-0 font-mono text-[11px] text-on-white-secondary">
-							{record.id}
-						</div>
-
-						<!-- Título -->
-						<div class="flex min-w-50 flex-1 flex-col gap-1">
-							<span class="text-xs font-semibold text-on-white-main">{record.title}</span>
-							<span class="text-[10px] text-on-white-tertiary">{record.url}</span>
-						</div>
-
-						<!-- Data/Hora Início -->
-						<div class="w-32 shrink-0 leading-tight text-on-white-secondary">
-							<p>{record.startDate}</p>
-							<p>{record.startTime}</p>
-						</div>
-
-						<!-- Data/Hora Fim -->
-						<div class="w-32 shrink-0 leading-tight text-on-white-secondary">
-							{#if record.endDate && record.endTime}
-								<p>{record.endDate}</p>
-								<p>{record.endTime}</p>
-							{:else}
-								<p class="text-on-white-tertiary">—</p>
-							{/if}
-						</div>
-
-						<!-- Detalhes (resumo) -->
-						<div class="flex w-41 shrink-0 flex-col gap-0.75">
-							<span class="text-[11px] text-on-white-secondary">{record.detailsSummary}</span>
-							<span class="text-[10px] text-on-white-tertiary">{record.detailsMeta}</span>
-						</div>
-
-						<!-- Status -->
-						<div class="w-47.5 shrink-0">
-							<span
-								class="inline-flex items-center rounded-md border px-2.5 py-1.5 text-[11px] font-medium {style.bg} {style.border} {style.text}"
-							>
-								{record.status}
-							</span>
-						</div>
-
-						<!-- Ações -->
-						<div class="w-37.5 shrink-0">
-							<button
-								type="button"
-								class="inline-flex cursor-pointer items-center gap-1.5 text-[11px] font-semibold text-on-white-main transition-colors hover:text-status-processing hover:underline"
-							>
-								<span>Visualizar Detalhes</span>
-								<ArrowUpRight class="size-3.5 shrink-0" />
-							</button>
-						</div>
+						<p class="text-sm font-medium text-on-white-main">
+							Nenhum registro encontrado com os filtros selecionados.
+						</p>
+						<p class="text-xs text-on-white-tertiary">
+							Ajuste a busca, o status ou o período para visualizar outros registros.
+						</p>
+						{#if hasAnyActiveFilter}
+							<Button type="button" variant="outline" size="sm" onclick={resetAllFilters}>
+								Limpar filtros
+							</Button>
+						{/if}
 					</div>
-				{/each}
+				{:else}
+					{#each paginatedRecords as record (record.id)}
+						{@const style = statusStyles[record.status]}
+						<div
+							class="flex flex-row items-center gap-3 border-b border-card-border bg-white px-4 py-4.75 text-xs transition-[background-color,box-shadow] duration-150 hover:bg-row-hover hover:shadow-[inset_3px_0_0_0_var(--color-status-processing)]"
+						>
+							<!-- ID do Registro -->
+							<div class="w-34 shrink-0 font-mono text-[11px] text-on-white-secondary">
+								{record.id}
+							</div>
+
+							<!-- Título -->
+							<div class="flex min-w-50 flex-1 flex-col gap-1">
+								<span class="text-xs font-semibold text-on-white-main">{record.title}</span>
+								<span class="text-[10px] text-on-white-tertiary">{record.url}</span>
+							</div>
+
+							<!-- Data/Hora Início -->
+							<div class="w-32 shrink-0 leading-tight text-on-white-secondary">
+								<p>{record.startDate}</p>
+								<p>{record.startTime}</p>
+							</div>
+
+							<!-- Data/Hora Fim -->
+							<div class="w-32 shrink-0 leading-tight text-on-white-secondary">
+								{#if record.endDate && record.endTime}
+									<p>{record.endDate}</p>
+									<p>{record.endTime}</p>
+								{:else}
+									<p class="text-on-white-tertiary">—</p>
+								{/if}
+							</div>
+
+							<!-- Detalhes (resumo) -->
+							<div class="flex w-41 shrink-0 flex-col gap-0.75">
+								<span class="text-[11px] text-on-white-secondary">{record.detailsSummary}</span>
+								<span class="text-[10px] text-on-white-tertiary">{record.detailsMeta}</span>
+							</div>
+
+							<!-- Status -->
+							<div class="w-47.5 shrink-0">
+								<span
+									class="inline-flex items-center rounded-md border px-2.5 py-1.5 text-[11px] font-medium {style.bg} {style.border} {style.text}"
+								>
+									{record.status}
+								</span>
+							</div>
+
+							<!-- Ações -->
+							<div class="w-37.5 shrink-0">
+								<button
+									type="button"
+									class="inline-flex cursor-pointer items-center gap-1.5 text-[11px] font-semibold text-on-white-main transition-colors hover:text-status-processing hover:underline"
+								>
+									<span>Visualizar Detalhes</span>
+									<ArrowUpRight class="size-3.5 shrink-0" />
+								</button>
+							</div>
+						</div>
+					{/each}
+				{/if}
 			</div>
 		</div>
 
-		<!-- Footer -->
-		<div
-			class="flex flex-row items-center justify-between p-4.5 text-[11px] text-on-white-tertiary"
+		<!-- Footer / Pagination -->
+		<Pagination.Root
+			count={filteredRecords.length}
+			{perPage}
+			page={safePage}
+			onPageChange={(page) => (currentPage = page)}
 		>
-			<p>Exibindo 1–{filteredRecords.length} de {records.length} registros</p>
-			<div class="flex flex-row items-center gap-2">
-				<span class="cursor-not-allowed text-on-veridt-blue-muted">Anterior</span>
-				<span
-					class="flex size-7.5 items-center justify-center rounded-md bg-veridt-blue text-[11px] font-semibold text-white"
+			{#snippet children({ pages, range })}
+				<div
+					class="flex flex-row flex-wrap items-center justify-between gap-4 p-4.5 text-[11px] text-on-white-tertiary"
 				>
-					1
-				</span>
-				<span class="cursor-not-allowed text-on-veridt-blue-muted">Próxima</span>
-			</div>
-		</div>
+					<div class="flex flex-row items-center gap-3">
+						<p>
+							{#if filteredRecords.length === 0}
+								Exibindo 0 de {records.length} registros
+							{:else}
+								Exibindo {range.start}–{range.end} de {filteredRecords.length}
+								{filteredRecords.length === 1 ? 'registro' : 'registros'}
+							{/if}
+						</p>
+
+						<Select.Root
+							type="single"
+							value={String(perPage)}
+							items={perPageOptions.map((value) => ({ value, label: `${value} por página` }))}
+							onValueChange={(value) => {
+								perPage = Number(value);
+								currentPage = 1;
+							}}
+						>
+							<Select.Trigger
+								class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-card-border bg-white px-2 py-1 text-[11px] text-on-white-secondary transition-colors hover:bg-surface-subtle hover:text-on-white-main"
+							>
+								<span>{perPage} / pág</span>
+								<ChevronDown class="size-3" />
+							</Select.Trigger>
+							<Select.Portal>
+								<Select.Content
+									sideOffset={4}
+									align="start"
+									class="z-50 min-w-28 rounded-lg border border-card-border bg-white p-1 shadow-lg"
+								>
+									<Select.Viewport class="flex flex-col gap-0.5">
+										{#each perPageOptions as option (option)}
+											<Select.Item
+												value={option}
+												label="{option} por página"
+												class="flex cursor-pointer items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-[11px] text-on-white-main outline-none data-highlighted:bg-surface-subtle data-selected:bg-surface-canvas data-selected:font-semibold"
+											>
+												{#snippet children({ selected })}
+													<span>{option} por página</span>
+													{#if selected}
+														<Check class="size-3 text-status-processing" />
+													{/if}
+												{/snippet}
+											</Select.Item>
+										{/each}
+									</Select.Viewport>
+								</Select.Content>
+							</Select.Portal>
+						</Select.Root>
+					</div>
+
+					<div class="flex flex-row items-center gap-1.5">
+						<Pagination.PrevButton
+							class="cursor-pointer rounded-md px-2 py-1.5 text-[11px] font-medium text-on-white-secondary transition-colors hover:bg-surface-subtle hover:text-on-white-main disabled:cursor-not-allowed disabled:text-on-veridt-blue-muted disabled:hover:bg-transparent"
+						>
+							Anterior
+						</Pagination.PrevButton>
+
+						{#each pages as page (page.key)}
+							{#if page.type === 'ellipsis'}
+								<span class="px-1 text-on-white-tertiary">…</span>
+							{:else}
+								<Pagination.Page
+									{page}
+									class="flex size-7.5 cursor-pointer items-center justify-center rounded-md border border-card-border bg-white text-[11px] font-semibold text-on-white-secondary transition-colors hover:bg-surface-subtle hover:text-on-white-main data-selected:border-veridt-blue data-selected:bg-veridt-blue data-selected:text-white"
+								>
+									{page.value}
+								</Pagination.Page>
+							{/if}
+						{/each}
+
+						<Pagination.NextButton
+							class="cursor-pointer rounded-md px-2 py-1.5 text-[11px] font-medium text-on-white-secondary transition-colors hover:bg-surface-subtle hover:text-on-white-main disabled:cursor-not-allowed disabled:text-on-veridt-blue-muted disabled:hover:bg-transparent"
+						>
+							Próxima
+						</Pagination.NextButton>
+					</div>
+				</div>
+			{/snippet}
+		</Pagination.Root>
 	</section>
 
 	<div class="flex flex-row items-center gap-2.5 text-xs text-on-white-tertiary">

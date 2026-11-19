@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createPasswordRecoveryClient, isStrongPassword } from './coreAuthClient.ts';
+import {
+	createAuthLoginClient,
+	createAuthLogoutClient,
+	createAuthRegisterClient,
+	createPasswordRecoveryClient,
+	isStrongPassword
+} from './coreAuthClient.ts';
 import { ApiError, CORRELATION_ID_HEADER, createHttpClient } from './httpClient.ts';
 
 function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
@@ -110,5 +116,111 @@ describe('createHttpClient & PasswordRecoveryClient (ISP)', () => {
 		expect(isStrongPassword('weak')).toBe(false);
 		expect(isStrongPassword('NoSymbol123')).toBe(false);
 		expect(isStrongPassword('NoNumber@')).toBe(false);
+	});
+
+	it('calls POST /api/auth/login and normalizes token and user payload', async () => {
+		const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(
+			jsonResponse(
+				{
+					token: 'jwt-login-123',
+					user: {
+						id: '11111111-1111-1111-1111-111111111111',
+						nome_completo: 'Dr. Fulano da Silva',
+						email: 'fulano@exemplo.com.br',
+						tipo_perfil: 'ADVOGADO',
+						numero_oab: '45.678 / BA'
+					}
+				},
+				{
+					headers: {
+						'content-type': 'application/json',
+						[CORRELATION_ID_HEADER]: 'corr-login'
+					}
+				}
+			)
+		);
+
+		const httpClient = createHttpClient({
+			baseUrl: 'http://localhost:3001',
+			generateCorrelationId: () => 'corr-login',
+			fetchFn
+		});
+		const client = createAuthLoginClient(httpClient);
+
+		const result = await client.login({
+			email: 'fulano@exemplo.com.br',
+			senha: 'Password1!'
+		});
+
+		const [url, init] = fetchFn.mock.calls[0];
+		expect(url).toBe('http://localhost:3001/api/auth/login');
+		expect(init?.method).toBe('POST');
+		expect(result.correlationId).toBe('corr-login');
+		expect(result.data).toEqual({
+			token: 'jwt-login-123',
+			user: {
+				id: '11111111-1111-1111-1111-111111111111',
+				nome: 'Dr. Fulano da Silva',
+				email: 'fulano@exemplo.com.br',
+				role: 'ADVOGADO',
+				oab: '45.678 / BA'
+			}
+		});
+	});
+
+	it('calls POST /api/auth/register and enforces numero_oab = null for USUARIO_COMUM (Decisão D1)', async () => {
+		const fetchFn = vi
+			.fn<typeof fetch>()
+			.mockResolvedValue(jsonResponse({ message: 'Usuário cadastrado com sucesso.' }));
+
+		const httpClient = createHttpClient({
+			baseUrl: 'http://localhost:3001',
+			generateCorrelationId: () => 'corr-reg',
+			fetchFn
+		});
+		const client = createAuthRegisterClient(httpClient);
+
+		await client.register({
+			nome_completo: 'Maria Oliveira',
+			email: 'maria@exemplo.com.br',
+			senha: 'Password1!',
+			cpf: '123.456.789-09',
+			tipo_perfil: 'USUARIO_COMUM',
+			numero_oab: '99.999 / BA',
+			termos_aceitos: true
+		});
+
+		const [url, init] = fetchFn.mock.calls[0];
+		expect(url).toBe('http://localhost:3001/api/auth/register');
+		expect(JSON.parse(String(init?.body))).toMatchObject({
+			tipo_perfil: 'USUARIO_COMUM',
+			numero_oab: null,
+			termos_aceitos: true
+		});
+	});
+
+	it('calls POST /api/auth/logout with Authorization Bearer token and X-Correlation-ID', async () => {
+		const fetchFn = vi
+			.fn<typeof fetch>()
+			.mockResolvedValue(jsonResponse({ message: 'Logout realizado e token revogado' }));
+
+		const httpClient = createHttpClient({
+			baseUrl: 'http://localhost:3001',
+			getAuthToken: () => 'jwt-active-999',
+			generateCorrelationId: () => 'corr-logout',
+			fetchFn
+		});
+		const client = createAuthLogoutClient(httpClient);
+
+		const result = await client.logout();
+
+		const [url, init] = fetchFn.mock.calls[0];
+		expect(url).toBe('http://localhost:3001/api/auth/logout');
+		expect(init?.method).toBe('POST');
+		expect(init?.headers).toMatchObject({
+			Authorization: 'Bearer jwt-active-999',
+			[CORRELATION_ID_HEADER]: 'corr-logout'
+		});
+		expect(result.data.message).toBe('Logout realizado e token revogado');
 	});
 });

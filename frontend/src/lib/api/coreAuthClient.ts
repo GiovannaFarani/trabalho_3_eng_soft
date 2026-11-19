@@ -1,10 +1,57 @@
-import { authSession } from '../auth/session.svelte.ts';
+import { authSession, type AuthenticatedUser, type UserRole } from '../auth/session.svelte.ts';
 import {
 	createHttpClient,
 	type ApiResponse,
 	type HttpPostClient,
 	type RequestOptions
 } from './httpClient.ts';
+
+export type ProfileTypeDto = 'ADVOGADO' | 'USUARIO_COMUM';
+
+export interface LoginRequest {
+	email: string;
+	senha: string;
+}
+
+export interface BackendUserDto {
+	id?: string;
+	sub?: string;
+	nome?: string | null;
+	nome_completo?: string | null;
+	email?: string | null;
+	role?: UserRole;
+	tipo_perfil?: UserRole;
+	oab?: string | null;
+	numero_oab?: string | null;
+}
+
+export interface LoginResponseDto {
+	token?: string;
+	access_token?: string;
+	user?: BackendUserDto | null;
+}
+
+export interface LoginResult {
+	token: string;
+	user: AuthenticatedUser | null;
+}
+
+export interface RegisterRequest {
+	nome_completo: string;
+	email: string;
+	senha: string;
+	cpf: string;
+	tipo_perfil: ProfileTypeDto;
+	numero_oab: string | null;
+	termos_aceitos: boolean;
+}
+
+export interface RegisterResponse {
+	message?: string;
+	token?: string;
+	access_token?: string;
+	user?: BackendUserDto | null;
+}
 
 export interface ForgotPasswordRequest {
 	email: string;
@@ -17,6 +64,34 @@ export interface ResetPasswordRequest {
 
 export interface MessageResponse {
 	message: string;
+}
+
+/**
+ * Interface Segregation Principle (ISP):
+ * Narrow contract for authenticating a user (`POST /api/auth/login`).
+ */
+export interface AuthLoginClient {
+	login(payload: LoginRequest, options?: RequestOptions): Promise<ApiResponse<LoginResult>>;
+}
+
+/**
+ * Interface Segregation Principle (ISP):
+ * Narrow contract for registering a new user (`POST /api/auth/register`).
+ */
+export interface AuthRegisterClient {
+	register(
+		payload: RegisterRequest,
+		options?: RequestOptions
+	): Promise<ApiResponse<RegisterResponse>>;
+}
+
+/**
+ * Interface Segregation Principle (ISP):
+ * Narrow contract for revoking the active session (`POST /api/auth/logout`).
+ * Workspace components depend only on this interface, never on login/register/recovery.
+ */
+export interface AuthLogoutClient {
+	logout(options?: RequestOptions): Promise<ApiResponse<MessageResponse>>;
 }
 
 /**
@@ -42,8 +117,79 @@ export const STRONG_PASSWORD_REGEX =
 export const PASSWORD_RULE_MESSAGE =
 	'A senha deve ter no mínimo 8 caracteres, com letras, números e símbolos (@$!%*#?&).';
 
+export const TERMS_REQUIRED_MESSAGE =
+	'É obrigatório aceitar os Termos de Uso e Política de Privacidade.';
+
 export function isStrongPassword(password: string): boolean {
 	return STRONG_PASSWORD_REGEX.test(password);
+}
+
+export function normalizeBackendUser(
+	dto: BackendUserDto | null | undefined
+): AuthenticatedUser | null {
+	if (!dto) return null;
+	const id = dto.id ?? dto.sub;
+	const role = dto.role ?? dto.tipo_perfil;
+	if (!id || !role) return null;
+
+	return {
+		id: String(id),
+		nome: (dto.nome ?? dto.nome_completo ?? null)?.trim() || null,
+		email: dto.email?.trim() || null,
+		role,
+		oab: (dto.oab ?? dto.numero_oab ?? null)?.trim() || null
+	};
+}
+
+export function createAuthLoginClient(httpClient: HttpPostClient): AuthLoginClient {
+	return {
+		async login(payload, options) {
+			const response = await httpClient.post<LoginResponseDto, LoginRequest>(
+				'/api/auth/login',
+				payload,
+				options
+			);
+			const token = response.data?.token ?? response.data?.access_token ?? '';
+			if (!token) {
+				throw new Error('Resposta de autenticação inválida: token ausente.');
+			}
+			return {
+				data: {
+					token,
+					user: normalizeBackendUser(response.data?.user)
+				},
+				correlationId: response.correlationId
+			};
+		}
+	};
+}
+
+export function createAuthRegisterClient(httpClient: HttpPostClient): AuthRegisterClient {
+	return {
+		register(payload, options) {
+			const normalizedPayload: RegisterRequest = {
+				...payload,
+				numero_oab: payload.tipo_perfil === 'ADVOGADO' ? payload.numero_oab : null
+			};
+			return httpClient.post<RegisterResponse, RegisterRequest>(
+				'/api/auth/register',
+				normalizedPayload,
+				options
+			);
+		}
+	};
+}
+
+export function createAuthLogoutClient(httpClient: HttpPostClient): AuthLogoutClient {
+	return {
+		logout(options) {
+			return httpClient.post<MessageResponse, Record<string, never>>(
+				'/api/auth/logout',
+				{},
+				options
+			);
+		}
+	};
 }
 
 export function createPasswordRecoveryClient(httpClient: HttpPostClient): PasswordRecoveryClient {
@@ -74,6 +220,12 @@ export const coreAuthHttpClient = createHttpClient({
 	getAuthToken: () => authSession.getAuthToken(),
 	onUnauthorized: () => authSession.clearSession()
 });
+
+export const authLoginClient: AuthLoginClient = createAuthLoginClient(coreAuthHttpClient);
+
+export const authRegisterClient: AuthRegisterClient = createAuthRegisterClient(coreAuthHttpClient);
+
+export const authLogoutClient: AuthLogoutClient = createAuthLogoutClient(coreAuthHttpClient);
 
 export const passwordRecoveryClient: PasswordRecoveryClient =
 	createPasswordRecoveryClient(coreAuthHttpClient);

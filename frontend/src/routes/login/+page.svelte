@@ -19,22 +19,32 @@
 	import { page } from '$app/state';
 	import {
 		ApiError,
+		authLoginClient,
+		authRegisterClient,
 		authSession,
 		Button,
 		Checkbox,
 		isStrongPassword,
 		Label,
+		normalizeBackendUser,
 		PASSWORD_RULE_MESSAGE,
 		passwordRecoveryClient,
 		RadioGroup,
 		ScrollArea,
 		Tabs,
+		TERMS_REQUIRED_MESSAGE,
 		TextInput
 	} from '#lib';
+
+	let activeTab = $state('login');
 
 	let email = $state('');
 	let password = $state('');
 	let showPassword = $state(false);
+	let isSubmittingLogin = $state(false);
+	let loginError = $state<string | null>(null);
+	let loginNotice = $state<string | null>(null);
+
 	let isRecoveringPassword = $state(false);
 	let recoveryStep = $state<'request' | 'confirm' | 'done'>('request');
 	let recoveryEmail = $state('');
@@ -55,6 +65,11 @@
 	let registerPassword = $state('');
 	let showRegisterPassword = $state(false);
 	let acceptedTerms = $state(false);
+	let isSubmittingRegister = $state(false);
+	let registerError = $state<string | null>(null);
+	let registerPasswordError = $state<string | null>(null);
+	let registerOabError = $state<string | null>(null);
+	let registerTermsError = $state<string | null>(null);
 
 	const termsId = $props.id();
 
@@ -86,6 +101,120 @@
 		isRecoveringPassword = false;
 		recoveryStep = 'request';
 		clearRecoveryFeedback();
+	}
+
+	function clearRegisterFeedback() {
+		registerError = null;
+		registerPasswordError = null;
+		registerOabError = null;
+		registerTermsError = null;
+	}
+
+	async function handleLogin(event: SubmitEvent) {
+		event.preventDefault();
+		loginError = null;
+		loginNotice = null;
+
+		const trimmedEmail = email.trim();
+		if (!trimmedEmail || !password) {
+			loginError = 'Informe seu e-mail e senha para entrar.';
+			return;
+		}
+
+		isSubmittingLogin = true;
+		try {
+			const response = await authLoginClient.login({
+				email: trimmedEmail,
+				senha: password
+			});
+			authSession.setSession(response.data.token, response.data.user);
+			await goto(resolve('/(workspace)/records'), { replaceState: true });
+		} catch (error) {
+			loginError =
+				error instanceof ApiError ? error.message : 'Não foi possível autenticar. Tente novamente.';
+		} finally {
+			isSubmittingLogin = false;
+		}
+	}
+
+	async function handleRegister(event: SubmitEvent) {
+		event.preventDefault();
+		clearRegisterFeedback();
+
+		const trimmedName = fullName.trim();
+		const trimmedEmail = registerEmail.trim();
+		const trimmedCpf = cpf.trim();
+		const trimmedOab = oabNumber.trim();
+
+		if (!trimmedName || !trimmedEmail || !trimmedCpf) {
+			registerError = 'Preencha nome completo, e-mail e CPF.';
+			return;
+		}
+
+		if (profileType === 'lawyer' && !trimmedOab) {
+			registerOabError = 'Número da OAB obrigatório para o perfil Advogado.';
+			return;
+		}
+
+		if (!isStrongPassword(registerPassword)) {
+			registerPasswordError = PASSWORD_RULE_MESSAGE;
+			return;
+		}
+
+		if (!acceptedTerms) {
+			registerTermsError = TERMS_REQUIRED_MESSAGE;
+			return;
+		}
+
+		isSubmittingRegister = true;
+		try {
+			const response = await authRegisterClient.register({
+				nome_completo: trimmedName,
+				email: trimmedEmail,
+				senha: registerPassword,
+				cpf: trimmedCpf,
+				tipo_perfil: profileType === 'lawyer' ? 'ADVOGADO' : 'USUARIO_COMUM',
+				numero_oab: profileType === 'lawyer' ? trimmedOab : null,
+				termos_aceitos: acceptedTerms
+			});
+
+			const returnedToken = response.data?.token ?? response.data?.access_token;
+			if (returnedToken) {
+				authSession.setSession(returnedToken, normalizeBackendUser(response.data?.user));
+				await goto(resolve('/(workspace)/records'), { replaceState: true });
+				return;
+			}
+
+			email = trimmedEmail;
+			password = '';
+			fullName = '';
+			registerEmail = '';
+			cpf = '';
+			oabNumber = '';
+			registerPassword = '';
+			acceptedTerms = false;
+			loginError = null;
+			loginNotice =
+				response.data?.message ?? 'Conta criada com sucesso! Faça login para continuar.';
+			activeTab = 'login';
+		} catch (error) {
+			const message =
+				error instanceof ApiError
+					? error.message
+					: 'Não foi possível concluir o cadastro. Tente novamente.';
+			const lower = message.toLowerCase();
+			if (lower.includes('oab')) {
+				registerOabError = message;
+			} else if (lower.includes('senha')) {
+				registerPasswordError = message;
+			} else if (lower.includes('termo')) {
+				registerTermsError = message;
+			} else {
+				registerError = message;
+			}
+		} finally {
+			isSubmittingRegister = false;
+		}
 	}
 
 	async function handleRequestRecovery(event: SubmitEvent) {
@@ -239,7 +368,7 @@
 			class="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-card-border bg-white"
 		>
 			<Tabs.Root
-				value="login"
+				bind:value={activeTab}
 				class="min-h-0 flex-1"
 				onValueChange={(value) => {
 					if (value !== 'login') resetRecoveryFlow();
@@ -416,18 +545,35 @@
 								</div>
 							{/if}
 						{:else}
-							<form class="flex flex-col gap-4.75" onsubmit={(e) => e.preventDefault()}>
+							<form class="flex flex-col gap-4.75" onsubmit={handleLogin}>
 								<div class="flex flex-col gap-1.5">
 									<h3 class="text-on-white-main">Bem-vindo de volta</h3>
 									<p class="text-xs leading-[150%] text-on-white-tertiary">
 										Use seu e-mail e senha para continuar.
 									</p>
 								</div>
+								{#if loginNotice}
+									<p
+										role="status"
+										class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800"
+									>
+										{loginNotice}
+									</p>
+								{/if}
+								{#if loginError}
+									<p
+										role="alert"
+										class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-status-danger"
+									>
+										{loginError}
+									</p>
+								{/if}
 								<TextInput
 									label="E-mail"
 									type="email"
 									placeholder="fulano@exemplo.com.br"
 									autocomplete="email"
+									disabled={isSubmittingLogin}
 									bind:value={email}
 								/>
 								<TextInput
@@ -435,6 +581,7 @@
 									type={showPassword ? 'text' : 'password'}
 									placeholder="••••••••••••"
 									autocomplete="current-password"
+									disabled={isSubmittingLogin}
 									bind:value={password}
 								>
 									{#snippet trailing()}
@@ -460,14 +607,15 @@
 										variant="link"
 										size="sm"
 										class="self-start"
+										disabled={isSubmittingLogin}
 										onclick={() => (isRecoveringPassword = true)}
 									>
 										Esqueci minha senha / Recuperar Senha
 									</Button>
 								</div>
-								<Button type="submit" class="w-full">
+								<Button type="submit" class="w-full" disabled={isSubmittingLogin}>
 									<ArrowRight class="size-4" />
-									Entrar no Sistema
+									{isSubmittingLogin ? 'Entrando...' : 'Entrar no Sistema'}
 								</Button>
 							</form>
 						{/if}
@@ -475,13 +623,22 @@
 				</Tabs.Content>
 				<Tabs.Content value="register" class="min-h-0 flex-1 flex-col data-[state=active]:flex">
 					<ScrollArea class="min-h-0 flex-1" viewportClass="p-7">
-						<form class="flex flex-col gap-4.5" onsubmit={(e) => e.preventDefault()}>
+						<form class="flex flex-col gap-4.5" onsubmit={handleRegister}>
 							<div class="flex flex-col gap-1.5">
 								<h3 class="text-on-white-main">Cadastrar Usuário</h3>
 								<p class="text-xs leading-[150%] text-on-white-tertiary">
 									Novo por aqui? Preencha seu perfil de acesso.
 								</p>
 							</div>
+
+							{#if registerError}
+								<p
+									role="alert"
+									class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-status-danger"
+								>
+									{registerError}
+								</p>
+							{/if}
 
 							<div class="flex flex-col gap-1.75">
 								<Label>Tipo de perfil</Label>
@@ -499,6 +656,7 @@
 								type="text"
 								placeholder="Fulano da Silva"
 								autocomplete="name"
+								disabled={isSubmittingRegister}
 								bind:value={fullName}
 							/>
 
@@ -507,6 +665,7 @@
 								type="email"
 								placeholder="fulano@exemplo.com.br"
 								autocomplete="email"
+								disabled={isSubmittingRegister}
 								bind:value={registerEmail}
 							/>
 
@@ -516,6 +675,7 @@
 									label="CPF"
 									type="text"
 									placeholder="123.456.789-09"
+									disabled={isSubmittingRegister}
 									bind:value={cpf}
 								/>
 								{#if profileType === 'lawyer'}
@@ -525,6 +685,8 @@
 										type="text"
 										placeholder="45.678 / BA"
 										class="border-status-processing! bg-status-processing-bg! focus:border-status-processing! focus:ring-status-processing/15!"
+										error={registerOabError ?? undefined}
+										disabled={isSubmittingRegister}
 										bind:value={oabNumber}
 									/>
 								{/if}
@@ -544,7 +706,9 @@
 								type={showRegisterPassword ? 'text' : 'password'}
 								placeholder="••••••••••••"
 								autocomplete="new-password"
-								hint="Use ao menos 8 caracteres, letras, números e símbolos."
+								hint="Use ao menos 8 caracteres, letras, números e símbolos (@$!%*#?&)."
+								error={registerPasswordError ?? undefined}
+								disabled={isSubmittingRegister}
 								bind:value={registerPassword}
 							>
 								{#snippet trailing()}
@@ -565,32 +729,41 @@
 								{/snippet}
 							</TextInput>
 
-							<div class="flex flex-row items-center gap-2.25">
-								<Checkbox id={termsId} bind:checked={acceptedTerms} />
-								<Label for={termsId} variant="inline">
-									Li e aceito os
-									<button
-										type="button"
-										class="inline cursor-pointer font-semibold text-on-white-main underline-offset-4 hover:underline"
-										onclick={(e) => e.stopPropagation()}
-									>
-										Termos de Uso
-									</button>
-									e a
-									<button
-										type="button"
-										class="inline cursor-pointer font-semibold text-on-white-main underline-offset-4 hover:underline"
-										onclick={(e) => e.stopPropagation()}
-									>
-										Política de Privacidade
-									</button>
-									da Veridt.
-								</Label>
+							<div class="flex flex-col gap-1.5">
+								<div class="flex flex-row items-center gap-2.25">
+									<Checkbox
+										id={termsId}
+										disabled={isSubmittingRegister}
+										bind:checked={acceptedTerms}
+									/>
+									<Label for={termsId} variant="inline">
+										Li e aceito os
+										<button
+											type="button"
+											class="inline cursor-pointer font-semibold text-on-white-main underline-offset-4 hover:underline"
+											onclick={(e) => e.stopPropagation()}
+										>
+											Termos de Uso
+										</button>
+										e a
+										<button
+											type="button"
+											class="inline cursor-pointer font-semibold text-on-white-main underline-offset-4 hover:underline"
+											onclick={(e) => e.stopPropagation()}
+										>
+											Política de Privacidade
+										</button>
+										da Veridt.
+									</Label>
+								</div>
+								{#if registerTermsError}
+									<p role="alert" class="text-[11px] text-status-danger">{registerTermsError}</p>
+								{/if}
 							</div>
 
-							<Button type="submit" class="w-full">
+							<Button type="submit" class="w-full" disabled={isSubmittingRegister}>
 								<ArrowRight class="size-4" />
-								Criar Conta
+								{isSubmittingRegister ? 'Criando conta...' : 'Criar Conta'}
 							</Button>
 						</form>
 					</ScrollArea>

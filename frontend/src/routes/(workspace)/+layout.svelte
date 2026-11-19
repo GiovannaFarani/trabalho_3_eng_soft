@@ -11,10 +11,17 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { authSession, formatUserDisplayLabel, formatUserInitials, ScrollArea } from '#lib';
+	import {
+		authLogoutClient,
+		authSession,
+		formatUserDisplayLabel,
+		formatUserInitials,
+		ScrollArea
+	} from '#lib';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
+	let isLoggingOut = $state(false);
 
 	const userInitials = $derived(
 		formatUserInitials(authSession.user?.nome, authSession.user?.email)
@@ -27,9 +34,18 @@
 		}
 	});
 
-	function handleLogout() {
-		authSession.clearSession();
-		void goto(resolve('/login'), { replaceState: true });
+	async function handleLogout() {
+		if (isLoggingOut) return;
+		isLoggingOut = true;
+		try {
+			await authLogoutClient.logout();
+		} catch {
+			// Clear local session even if the token is already expired/revoked or backend is unreachable.
+		} finally {
+			authSession.clearSession();
+			isLoggingOut = false;
+			void goto(resolve('/login'), { replaceState: true });
+		}
 	}
 
 	const navItems = [
@@ -139,11 +155,12 @@
 
 					<button
 						type="button"
-						onclick={handleLogout}
-						class="flex cursor-pointer flex-row items-center gap-1.75 text-xs text-on-white-secondary transition-colors hover:text-on-white-main"
+						disabled={isLoggingOut}
+						onclick={() => void handleLogout()}
+						class="flex cursor-pointer flex-row items-center gap-1.75 text-xs text-on-white-secondary transition-colors hover:text-on-white-main disabled:cursor-not-allowed disabled:opacity-60"
 					>
 						<LogOut class="size-3.75" />
-						<span>Sair do Sistema</span>
+						<span>{isLoggingOut ? 'Saindo...' : 'Sair do Sistema'}</span>
 					</button>
 				</div>
 			</header>

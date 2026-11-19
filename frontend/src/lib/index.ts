@@ -32,15 +32,33 @@ export {
 	type RequestOptions
 } from './api/httpClient.ts';
 export {
-	createPasswordRecoveryClient,
+	authLoginClient,
+	authLogoutClient,
+	authRegisterClient,
 	coreAuthHttpClient,
+	createAuthLoginClient,
+	createAuthLogoutClient,
+	createAuthRegisterClient,
+	createPasswordRecoveryClient,
 	isStrongPassword,
+	normalizeBackendUser,
 	PASSWORD_RULE_MESSAGE,
 	passwordRecoveryClient,
 	STRONG_PASSWORD_REGEX,
+	TERMS_REQUIRED_MESSAGE,
+	type AuthLoginClient,
+	type AuthLogoutClient,
+	type AuthRegisterClient,
+	type BackendUserDto,
 	type ForgotPasswordRequest,
+	type LoginRequest,
+	type LoginResponseDto,
+	type LoginResult,
 	type MessageResponse,
 	type PasswordRecoveryClient,
+	type ProfileTypeDto,
+	type RegisterRequest,
+	type RegisterResponse,
 	type ResetPasswordRequest
 } from './api/coreAuthClient.ts';
 export {

@@ -8,12 +8,29 @@
 		ShieldCheck,
 		Wallet
 	} from '@lucide/svelte';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { ScrollArea } from '#lib';
+	import { authSession, formatUserDisplayLabel, formatUserInitials, ScrollArea } from '#lib';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
+
+	const userInitials = $derived(
+		formatUserInitials(authSession.user?.nome, authSession.user?.email)
+	);
+	const userDisplayLabel = $derived(formatUserDisplayLabel(authSession.user));
+
+	$effect(() => {
+		if (!authSession.isAuthenticated) {
+			void goto(resolve('/login'), { replaceState: true });
+		}
+	});
+
+	function handleLogout() {
+		authSession.clearSession();
+		void goto(resolve('/login'), { replaceState: true });
+	}
 
 	const navItems = [
 		{
@@ -112,18 +129,19 @@
 					<div
 						class="flex size-8.25 items-center justify-center rounded-full bg-surface-subtle text-[11px] text-on-white-main"
 					>
-						FS
+						{userInitials}
 					</div>
-					<span class="text-xs text-on-white-ink">Dr. Fulano da Silva - OAB/BA</span>
+					<span class="text-xs text-on-white-ink">{userDisplayLabel}</span>
 				</div>
 
-				<a
-					href={resolve('/login')}
-					class="flex flex-row items-center gap-1.75 text-xs text-on-white-secondary transition-colors hover:text-on-white-main"
+				<button
+					type="button"
+					onclick={handleLogout}
+					class="flex cursor-pointer flex-row items-center gap-1.75 text-xs text-on-white-secondary transition-colors hover:text-on-white-main"
 				>
 					<LogOut class="size-3.75" />
 					<span>Sair do Sistema</span>
-				</a>
+				</button>
 			</div>
 		</header>
 

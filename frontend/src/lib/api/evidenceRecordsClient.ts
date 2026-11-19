@@ -1,3 +1,4 @@
+import { authSession } from '../auth/session.svelte.ts';
 import {
 	createHttpClient,
 	type ApiResponse,
@@ -163,7 +164,9 @@ const evidenceServiceBaseUrl =
 		?.VITE_EVIDENCE_SERVICE_URL ?? '';
 
 export const evidenceHttpClient = createHttpClient({
-	baseUrl: evidenceServiceBaseUrl
+	baseUrl: evidenceServiceBaseUrl,
+	getAuthToken: () => authSession.getAuthToken(),
+	onUnauthorized: () => authSession.clearSession()
 });
 
 export const recordsReaderClient: RecordsReaderClient =

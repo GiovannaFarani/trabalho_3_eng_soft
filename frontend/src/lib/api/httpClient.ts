@@ -3,6 +3,7 @@ export const CORRELATION_ID_HEADER = 'X-Correlation-ID';
 export interface HttpClientConfig {
 	baseUrl?: string;
 	getAuthToken?: () => string | null;
+	onUnauthorized?: (error: ApiError) => void;
 	generateCorrelationId?: () => string;
 	fetchFn?: typeof fetch;
 }
@@ -121,11 +122,15 @@ export function createHttpClient(config: HttpClientConfig = {}): HttpClient {
 		}
 
 		if (!response.ok) {
-			throw new ApiError(
+			const apiError = new ApiError(
 				extractErrorMessage(payload, response.status),
 				response.status,
 				responseCorrelationId
 			);
+			if (response.status === 401) {
+				config.onUnauthorized?.(apiError);
+			}
+			throw apiError;
 		}
 
 		return {

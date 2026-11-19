@@ -18,6 +18,7 @@
 	import { Pagination, Popover, Select } from 'bits-ui';
 	import {
 		ApiError,
+		authSession,
 		Button,
 		Label,
 		recordsReaderClient,
@@ -178,6 +179,10 @@
 	}
 
 	$effect(() => {
+		if (!authSession.isAuthenticated) {
+			isLoading = false;
+			return;
+		}
 		const controller = new AbortController();
 		void loadRecords(controller.signal);
 		return () => controller.abort();

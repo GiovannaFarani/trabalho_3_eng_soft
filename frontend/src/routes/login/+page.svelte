@@ -14,9 +14,12 @@
 		KeyRound,
 		Mail
 	} from '@lucide/svelte';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import {
 		ApiError,
+		authSession,
 		Button,
 		Checkbox,
 		isStrongPassword,
@@ -58,6 +61,8 @@
 	$effect(() => {
 		const tokenFromUrl =
 			page.url.searchParams.get('token')?.trim() || page.url.searchParams.get('resetToken')?.trim();
+		const isRecoveryUrl = Boolean(tokenFromUrl) || page.url.searchParams.get('recover') === '1';
+
 		if (tokenFromUrl) {
 			isRecoveringPassword = true;
 			recoveryStep = 'confirm';
@@ -65,6 +70,8 @@
 		} else if (page.url.searchParams.get('recover') === '1') {
 			isRecoveringPassword = true;
 			recoveryStep = 'confirm';
+		} else if (authSession.isAuthenticated && !isRecoveringPassword && !isRecoveryUrl) {
+			void goto(resolve('/(workspace)/records'), { replaceState: true });
 		}
 	});
 

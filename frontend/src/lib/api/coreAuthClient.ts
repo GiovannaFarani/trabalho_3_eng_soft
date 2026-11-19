@@ -1,3 +1,4 @@
+import { authSession } from '../auth/session.svelte.ts';
 import {
 	createHttpClient,
 	type ApiResponse,
@@ -69,7 +70,9 @@ const coreServiceBaseUrl =
 		?.VITE_CORE_SERVICE_URL ?? '';
 
 export const coreAuthHttpClient = createHttpClient({
-	baseUrl: coreServiceBaseUrl
+	baseUrl: coreServiceBaseUrl,
+	getAuthToken: () => authSession.getAuthToken(),
+	onUnauthorized: () => authSession.clearSession()
 });
 
 export const passwordRecoveryClient: PasswordRecoveryClient =

@@ -57,3 +57,21 @@ export {
 	type EvidenceRecordStatus,
 	type RecordsReaderClient
 } from './api/evidenceRecordsClient.ts';
+export {
+	AUTH_TOKEN_STORAGE_KEY,
+	AUTH_USER_STORAGE_KEY,
+	authSession,
+	createAuthSessionStore,
+	decodeJwtUser,
+	formatUserDisplayLabel,
+	formatUserInitials,
+	isTokenExpired,
+	type AuthenticatedUser,
+	type AuthSessionReader,
+	type AuthSessionStore,
+	type AuthSessionStoreConfig,
+	type AuthSessionWriter,
+	type KeyValueStorage,
+	type TokenProvider,
+	type UserRole
+} from './auth/session.svelte.ts';

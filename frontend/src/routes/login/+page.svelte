@@ -56,11 +56,15 @@
 	const termsId = $props.id();
 
 	$effect(() => {
-		const tokenFromUrl = page.url.searchParams.get('resetToken');
+		const tokenFromUrl =
+			page.url.searchParams.get('token')?.trim() || page.url.searchParams.get('resetToken')?.trim();
 		if (tokenFromUrl) {
 			isRecoveringPassword = true;
 			recoveryStep = 'confirm';
 			resetToken = tokenFromUrl;
+		} else if (page.url.searchParams.get('recover') === '1') {
+			isRecoveringPassword = true;
+			recoveryStep = 'confirm';
 		}
 	});
 

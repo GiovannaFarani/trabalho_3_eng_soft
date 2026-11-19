@@ -4,7 +4,7 @@ VALUES (
     '11111111-1111-1111-1111-111111111111',
     'Dr. Fulano da Silva',
     'fulano@exemplo.com.br',
-    '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/HS.iK8.',
+    '$2b$12$iEXK.LbXepaIua5Qjsu9kuCarJxDSFrt.ICgKO2y2nhJn6cWcMq/G',
     '123.456.789-09',
     'ADVOGADO',
     '45.678 / BA',

@@ -34,6 +34,7 @@
 
 	let records = $state<EvidenceRecord[]>([]);
 	let isLoading = $state(true);
+	let hasLoaded = $state(false);
 	let loadError = $state<string | null>(null);
 	let isAuthError = $state(false);
 	let lastUpdatedAt = $state<string | null>(null);
@@ -156,11 +157,13 @@
 		try {
 			const response = await recordsReaderClient.listRecords({ signal });
 			records = response.data;
+			hasLoaded = true;
 			lastUpdatedAt = formatCurrentBrasiliaTime();
 		} catch (error) {
 			if (error instanceof DOMException && error.name === 'AbortError') {
 				return;
 			}
+			hasLoaded = false;
 			if (error instanceof ApiError) {
 				isAuthError = error.status === 401;
 				loadError = error.message;
@@ -321,24 +324,26 @@
 		</Button>
 	</div>
 
-	<section
-		class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
-		aria-label="Visão geral dos registros"
-	>
-		{#each metrics as metric (metric.title)}
-			{@const Icon = metric.icon}
-			<div
-				class="flex flex-row items-start justify-between gap-4.5 rounded-xl border border-card-border bg-white p-5"
-			>
-				<div class="flex flex-1 flex-col gap-2.25">
-					<p class="text-xs text-on-white-secondary">{metric.title}</p>
-					<p class="text-[30px] leading-tight font-normal text-on-white-main">{metric.value}</p>
-					<p class="text-[10px] text-on-white-tertiary">{metric.description}</p>
+	{#if hasLoaded && !loadError}
+		<section
+			class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+			aria-label="Visão geral dos registros"
+		>
+			{#each metrics as metric (metric.title)}
+				{@const Icon = metric.icon}
+				<div
+					class="flex flex-row items-start justify-between gap-4.5 rounded-xl border border-card-border bg-white p-5"
+				>
+					<div class="flex flex-1 flex-col gap-2.25">
+						<p class="text-xs text-on-white-secondary">{metric.title}</p>
+						<p class="text-[30px] leading-tight font-normal text-on-white-main">{metric.value}</p>
+						<p class="text-[10px] text-on-white-tertiary">{metric.description}</p>
+					</div>
+					<Icon class="size-5.25 shrink-0 {metric.iconClass}" />
 				</div>
-				<Icon class="size-5.25 shrink-0 {metric.iconClass}" />
-			</div>
-		{/each}
-	</section>
+			{/each}
+		</section>
+	{/if}
 
 	<section
 		class="flex flex-col overflow-hidden rounded-xl border border-card-border bg-white"

@@ -127,7 +127,7 @@ class RabbitMQConsumer:
 
                     return
                 correlation_id = (
-                    (properties.correlation_id if properties else none)
+                    (properties.correlation_id if properties else None)
                     or payload.get("correlationId")
                     or "não informado"
                 )

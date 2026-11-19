@@ -14,28 +14,31 @@
 		Search,
 		SlidersHorizontal
 	} from '@lucide/svelte';
+	import { resolve } from '$app/paths';
 	import { Pagination, Popover, Select } from 'bits-ui';
-	import { Button, Label, TextInput } from '#lib';
-
-	interface EvidenceRecord {
-		id: string;
-		title: string;
-		url: string;
-		startDate: string;
-		startTime: string;
-		endDate: string | null;
-		endTime: string | null;
-		detailsSummary: string;
-		detailsMeta: string;
-		status: 'INICIADO' | 'PROCESSANDO' | 'CONCLUIDO' | 'FALHA - Crédito Estornado';
-	}
+	import {
+		ApiError,
+		authSession,
+		Button,
+		Label,
+		recordsReaderClient,
+		TextInput,
+		type EvidenceRecord
+	} from '#lib';
 
 	type StatusFilter = 'ALL' | EvidenceRecord['status'];
 	type SortOption = 'newest' | 'oldest' | 'title';
 	type CompletionFilter = 'all' | 'finished' | 'unfinished';
 
-	const DEFAULT_START_DATE = '2026-10-20';
-	const DEFAULT_END_DATE = '2026-10-22';
+	const DEFAULT_START_DATE = '';
+	const DEFAULT_END_DATE = '';
+
+	let records = $state<EvidenceRecord[]>([]);
+	let isLoading = $state(true);
+	let hasLoaded = $state(false);
+	let loadError = $state<string | null>(null);
+	let isAuthError = $state(false);
+	let lastUpdatedAt = $state<string | null>(null);
 
 	let searchQuery = $state('');
 	let statusFilter = $state<StatusFilter>('ALL');
@@ -59,118 +62,131 @@
 
 	const perPageOptions = ['4', '5', '6', '10'];
 
-	const datePresets = [
-		{ label: '20/10/2026 – 22/10/2026', start: '2026-10-20', end: '2026-10-22' },
-		{ label: '22/10/2026', start: '2026-10-22', end: '2026-10-22' },
-		{ label: '21/10/2026', start: '2026-10-21', end: '2026-10-21' },
-		{ label: 'Todas as datas', start: '', end: '' }
-	] as const;
+	function formatIsoLocalDate(date: Date): string {
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+		return `${year}-${month}-${day}`;
+	}
 
-	const metrics = [
-		{
-			title: 'Registros concluídos',
-			value: '03',
-			description: 'Prontos para consulta',
-			icon: FileCheckCorner,
-			iconClass: 'text-status-success'
-		},
-		{
-			title: 'Em processamento',
-			value: '01',
-			description: 'Preparando as evidências',
-			icon: LoaderCircle,
-			iconClass: 'text-status-processing'
-		},
-		{
-			title: 'Sessões iniciadas',
-			value: '01',
-			description: 'Gravação em andamento',
-			icon: CirclePlay,
-			iconClass: 'text-status-warning'
-		},
-		{
-			title: 'Falhas com estorno',
-			value: '01',
-			description: 'Crédito devolvido ao saldo',
-			icon: CircleAlert,
-			iconClass: 'text-status-danger'
-		}
-	] as const;
+	function buildDatePresets() {
+		const DAY_MS = 24 * 60 * 60 * 1000;
+		const now = Date.now();
+		const todayIso = formatIsoLocalDate(new Date(now));
+		return [
+			{ label: 'Todas as datas', start: '', end: '' },
+			{ label: 'Hoje', start: todayIso, end: todayIso },
+			{
+				label: 'Últimos 7 dias',
+				start: formatIsoLocalDate(new Date(now - 6 * DAY_MS)),
+				end: todayIso
+			},
+			{
+				label: 'Últimos 30 dias',
+				start: formatIsoLocalDate(new Date(now - 29 * DAY_MS)),
+				end: todayIso
+			}
+		] as const;
+	}
 
-	const records: EvidenceRecord[] = [
-		{
-			id: 'VRD-2026-0105',
-			title: 'Oferta anunciada • Notebook Aurora 14',
-			url: 'loja.orbita.example',
-			startDate: '22/10/2026',
-			startTime: '10:14:00',
-			endDate: null,
-			endTime: null,
-			detailsSummary: '1 vídeo em gravação',
-			detailsMeta: '1 imagem • sessão ativa',
-			status: 'INICIADO'
-		},
-		{
-			id: 'VRD-2026-0104',
-			title: 'Oferta anunciada • Notebook Aurora 14',
-			url: 'loja.orbita.example',
-			startDate: '22/10/2026',
-			startTime: '09:32:10',
-			endDate: '22/10/2026',
-			endTime: '09:35:24',
-			detailsSummary: '1 vídeo • 4 imagens',
-			detailsMeta: '00:03:14 • 48.5 MB',
-			status: 'CONCLUIDO'
-		},
-		{
-			id: 'VRD-2026-0103',
-			title: 'Publicação • Perfil Comercial',
-			url: 'rede.exemplo.com.br',
-			startDate: '22/10/2026',
-			startTime: '09:20:00',
-			endDate: null,
-			endTime: null,
-			detailsSummary: 'Gerando pacote ZIP',
-			detailsMeta: 'Verificação em andamento',
-			status: 'PROCESSANDO'
-		},
-		{
-			id: 'VRD-2026-0102',
-			title: 'Condições de contratação',
-			url: 'servicos.exemplo.com.br',
-			startDate: '21/10/2026',
-			startTime: '16:08:03',
-			endDate: '21/10/2026',
-			endTime: '16:09:50',
-			detailsSummary: '1 vídeo • 2 imagens',
-			detailsMeta: '00:01:47 • 22.8 MB',
-			status: 'CONCLUIDO'
-		},
-		{
-			id: 'VRD-2026-0101',
-			title: 'Anúncio • Imóvel residencial',
-			url: 'imoveis.exemplo.com.br',
-			startDate: '21/10/2026',
-			startTime: '15:42:11',
-			endDate: null,
-			endTime: null,
-			detailsSummary: 'URL indisponível',
-			detailsMeta: '1 crédito devolvido',
-			status: 'FALHA - Crédito Estornado'
-		},
-		{
-			id: 'VRD-2026-0100',
-			title: 'Página de atendimento',
-			url: 'ajuda.exemplo.com.br',
-			startDate: '20/10/2026',
-			startTime: '11:25:30',
-			endDate: '20/10/2026',
-			endTime: '11:27:02',
-			detailsSummary: '1 vídeo • 3 imagens',
-			detailsMeta: '00:01:32 • 18.4 MB',
-			status: 'CONCLUIDO'
+	const datePresets = buildDatePresets();
+
+	function formatCurrentBrasiliaTime(): string {
+		return new Intl.DateTimeFormat('pt-BR', {
+			timeZone: 'America/Sao_Paulo',
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit',
+			hour12: false
+		}).format(new Date());
+	}
+
+	function formatMetricCount(count: number): string {
+		return String(count).padStart(2, '0');
+	}
+
+	const metrics = $derived.by(() => {
+		let completed = 0;
+		let processing = 0;
+		let started = 0;
+		let failed = 0;
+
+		for (const record of records) {
+			if (record.status === 'CONCLUIDO') completed += 1;
+			else if (record.status === 'PROCESSANDO') processing += 1;
+			else if (record.status === 'INICIADO') started += 1;
+			else if (record.status === 'FALHA - Crédito Estornado') failed += 1;
 		}
-	];
+
+		return [
+			{
+				title: 'Registros concluídos',
+				value: formatMetricCount(completed),
+				description: 'Prontos para consulta',
+				icon: FileCheckCorner,
+				iconClass: 'text-status-success'
+			},
+			{
+				title: 'Em processamento',
+				value: formatMetricCount(processing),
+				description: 'Preparando as evidências',
+				icon: LoaderCircle,
+				iconClass: 'text-status-processing'
+			},
+			{
+				title: 'Sessões iniciadas',
+				value: formatMetricCount(started),
+				description: 'Gravação em andamento',
+				icon: CirclePlay,
+				iconClass: 'text-status-warning'
+			},
+			{
+				title: 'Falhas com estorno',
+				value: formatMetricCount(failed),
+				description: 'Crédito devolvido ao saldo',
+				icon: CircleAlert,
+				iconClass: 'text-status-danger'
+			}
+		] as const;
+	});
+
+	async function loadRecords(signal?: AbortSignal) {
+		isLoading = true;
+		loadError = null;
+		isAuthError = false;
+
+		try {
+			const response = await recordsReaderClient.listRecords({ signal });
+			records = response.data;
+			hasLoaded = true;
+			lastUpdatedAt = formatCurrentBrasiliaTime();
+		} catch (error) {
+			if (error instanceof DOMException && error.name === 'AbortError') {
+				return;
+			}
+			hasLoaded = false;
+			if (error instanceof ApiError) {
+				isAuthError = error.status === 401;
+				loadError = error.message;
+			} else {
+				loadError = 'Não foi possível carregar os registros. Tente novamente.';
+			}
+		} finally {
+			if (!signal?.aborted) {
+				isLoading = false;
+			}
+		}
+	}
+
+	$effect(() => {
+		if (!authSession.isAuthenticated) {
+			isLoading = false;
+			return;
+		}
+		const controller = new AbortController();
+		void loadRecords(controller.signal);
+		return () => controller.abort();
+	});
 
 	const statusStyles: Record<
 		EvidenceRecord['status'],
@@ -199,7 +215,9 @@
 	};
 
 	function toIsoDate(brDate: string): string {
-		const [day, month, year] = brDate.split('/');
+		const parts = brDate.split('/');
+		if (parts.length !== 3) return '';
+		const [day, month, year] = parts;
 		return `${year}-${month}-${day}`;
 	}
 
@@ -311,24 +329,26 @@
 		</Button>
 	</div>
 
-	<section
-		class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
-		aria-label="Visão geral dos registros"
-	>
-		{#each metrics as metric (metric.title)}
-			{@const Icon = metric.icon}
-			<div
-				class="flex flex-row items-start justify-between gap-4.5 rounded-xl border border-card-border bg-white p-5"
-			>
-				<div class="flex flex-1 flex-col gap-2.25">
-					<p class="text-xs text-on-white-secondary">{metric.title}</p>
-					<p class="text-[30px] leading-tight font-normal text-on-white-main">{metric.value}</p>
-					<p class="text-[10px] text-on-white-tertiary">{metric.description}</p>
+	{#if hasLoaded && !loadError}
+		<section
+			class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+			aria-label="Visão geral dos registros"
+		>
+			{#each metrics as metric (metric.title)}
+				{@const Icon = metric.icon}
+				<div
+					class="flex flex-row items-start justify-between gap-4.5 rounded-xl border border-card-border bg-white p-5"
+				>
+					<div class="flex flex-1 flex-col gap-2.25">
+						<p class="text-xs text-on-white-secondary">{metric.title}</p>
+						<p class="text-[30px] leading-tight font-normal text-on-white-main">{metric.value}</p>
+						<p class="text-[10px] text-on-white-tertiary">{metric.description}</p>
+					</div>
+					<Icon class="size-5.25 shrink-0 {metric.iconClass}" />
 				</div>
-				<Icon class="size-5.25 shrink-0 {metric.iconClass}" />
-			</div>
-		{/each}
-	</section>
+			{/each}
+		</section>
+	{/if}
 
 	<section
 		class="flex flex-col overflow-hidden rounded-xl border border-card-border bg-white"
@@ -345,10 +365,23 @@
 				</span>
 			</div>
 
-			<div class="flex flex-row items-center gap-1.75 text-[11px] text-on-white-tertiary">
-				<RefreshCw class="size-3.5" />
-				<span>Atualizado às 10:16:14</span>
-			</div>
+			<button
+				type="button"
+				disabled={isLoading}
+				onclick={() => void loadRecords()}
+				class="flex cursor-pointer flex-row items-center gap-1.75 text-[11px] text-on-white-tertiary transition-colors hover:text-on-white-main disabled:cursor-not-allowed disabled:opacity-60"
+			>
+				<RefreshCw class="size-3.5 {isLoading ? 'animate-spin' : ''}" />
+				<span>
+					{#if isLoading}
+						Atualizando...
+					{:else if lastUpdatedAt}
+						Atualizado às {lastUpdatedAt}
+					{:else}
+						Atualizar
+					{/if}
+				</span>
+			</button>
 		</div>
 
 		<div class="flex flex-row flex-wrap items-center gap-3 px-5 pb-5">
@@ -599,15 +632,59 @@
 					<span class="w-37.5 shrink-0">Ações</span>
 				</div>
 
-				{#if paginatedRecords.length === 0}
+				{#if isLoading && records.length === 0}
+					<div
+						class="flex flex-col items-center justify-center gap-3 border-b border-card-border px-4 py-12 text-center"
+					>
+						<LoaderCircle class="size-5 animate-spin text-status-processing" />
+						<p class="text-sm font-medium text-on-white-main">Carregando registros...</p>
+						<p class="text-xs text-on-white-tertiary">
+							Consultando suas evidências no serviço de registros.
+						</p>
+					</div>
+				{:else if loadError}
+					<div
+						role="alert"
+						class="flex flex-col items-center justify-center gap-3 border-b border-card-border px-4 py-12 text-center"
+					>
+						<CircleAlert class="size-5 text-status-danger" />
+						<p class="text-sm font-medium text-on-white-main">
+							{isAuthError
+								? 'Sessão necessária para consultar registros'
+								: 'Erro ao carregar registros'}
+						</p>
+						<p class="max-w-md text-xs text-on-white-tertiary">{loadError}</p>
+						<div class="flex flex-row items-center gap-2">
+							{#if isAuthError}
+								<a
+									href={resolve('/login')}
+									class="inline-flex h-8.5 items-center justify-center rounded-lg bg-veridt-blue px-3.5 text-xs font-semibold text-white transition-colors hover:bg-veridt-blue/90"
+								>
+									Ir para Login
+								</a>
+							{/if}
+							<Button type="button" variant="outline" size="sm" onclick={() => void loadRecords()}>
+								Tentar novamente
+							</Button>
+						</div>
+					</div>
+				{:else if paginatedRecords.length === 0}
 					<div
 						class="flex flex-col items-center justify-center gap-3 border-b border-card-border px-4 py-12 text-center"
 					>
 						<p class="text-sm font-medium text-on-white-main">
-							Nenhum registro encontrado com os filtros selecionados.
+							{#if records.length === 0}
+								Nenhum registro realizado até o momento.
+							{:else}
+								Nenhum registro encontrado com os filtros selecionados.
+							{/if}
 						</p>
 						<p class="text-xs text-on-white-tertiary">
-							Ajuste a busca, o status ou o período para visualizar outros registros.
+							{#if records.length === 0}
+								Assim que você iniciar uma captura, ela aparecerá aqui.
+							{:else}
+								Ajuste a busca, o status ou o período para visualizar outros registros.
+							{/if}
 						</p>
 						{#if hasAnyActiveFilter}
 							<Button type="button" variant="outline" size="sm" onclick={resetAllFilters}>

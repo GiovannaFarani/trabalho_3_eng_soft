@@ -56,7 +56,7 @@ def get_settings() -> Settings:
         smtp_from=_required("SMTP_FROM"),
         frontend_reset_url=os.getenv(
             "FRONTEND_RESET_URL",
-            "http://localhost:3000/reset-password"
+            "http://localhost:5173/reset-password"
         ),
     )
 

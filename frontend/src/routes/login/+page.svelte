@@ -12,7 +12,8 @@
 		Info,
 		Shield,
 		KeyRound,
-		Mail
+		Mail,
+		MailCheck
 	} from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -46,8 +47,9 @@
 	let loginNotice = $state<string | null>(null);
 
 	let isRecoveringPassword = $state(false);
-	let recoveryStep = $state<'request' | 'confirm' | 'done'>('request');
+	let recoveryStep = $state<'request' | 'sent' | 'confirm' | 'done'>('request');
 	let recoveryEmail = $state('');
+	let sentRecoveryEmail = $state('');
 	let resetToken = $state('');
 	let newPassword = $state('');
 	let showNewPassword = $state(false);
@@ -84,11 +86,21 @@
 			resetToken = tokenFromUrl;
 		} else if (page.url.searchParams.get('recover') === '1') {
 			isRecoveringPassword = true;
-			recoveryStep = 'confirm';
+			recoveryStep = 'request';
 		} else if (authSession.isAuthenticated && !isRecoveringPassword && !isRecoveryUrl) {
 			void goto(resolve('/(workspace)/records'), { replaceState: true });
 		}
 	});
+
+	function clearRecoveryQueryParams() {
+		if (
+			page.url.searchParams.has('token') ||
+			page.url.searchParams.has('resetToken') ||
+			page.url.searchParams.has('recover')
+		) {
+			void goto(resolve('/login'), { replaceState: true });
+		}
+	}
 
 	function clearRecoveryFeedback() {
 		recoveryError = null;
@@ -100,7 +112,19 @@
 	function resetRecoveryFlow() {
 		isRecoveringPassword = false;
 		recoveryStep = 'request';
+		sentRecoveryEmail = '';
+		resetToken = '';
+		newPassword = '';
 		clearRecoveryFeedback();
+		clearRecoveryQueryParams();
+	}
+
+	function requestNewRecoveryLink() {
+		clearRecoveryFeedback();
+		resetToken = '';
+		newPassword = '';
+		recoveryStep = 'request';
+		clearRecoveryQueryParams();
 	}
 
 	function clearRegisterFeedback() {
@@ -233,8 +257,10 @@
 			const response = await passwordRecoveryClient.requestPasswordReset({
 				email: trimmedEmail
 			});
+			sentRecoveryEmail = trimmedEmail;
 			recoveryMessage = response.data.message;
-			recoveryStep = 'confirm';
+			recoveryStep = 'sent';
+			clearRecoveryQueryParams();
 		} catch (error) {
 			recoveryError =
 				error instanceof ApiError
@@ -251,7 +277,7 @@
 
 		const trimmedToken = resetToken.trim();
 		if (!trimmedToken) {
-			tokenError = 'Informe o token recebido por e-mail.';
+			tokenError = 'Link de recuperação inválido ou incompleto. Solicite um novo link por e-mail.';
 			return;
 		}
 
@@ -270,6 +296,7 @@
 			recoveryStep = 'done';
 			resetToken = '';
 			newPassword = '';
+			clearRecoveryQueryParams();
 		} catch (error) {
 			const message =
 				error instanceof ApiError ? error.message : 'Não foi possível redefinir a senha.';
@@ -395,8 +422,7 @@
 										<p class="text-[15px] text-on-white-main">Recuperar Senha</p>
 									</div>
 									<p class="text-xs leading-[160%] text-on-white-secondary">
-										Informe o e-mail da sua conta. Enviaremos um link e um token para definir uma
-										nova senha.
+										Informe o e-mail da sua conta. Enviaremos um link para você redefinir sua senha.
 									</p>
 									<TextInput
 										label="E-mail de recuperação"
@@ -417,30 +443,51 @@
 										<Mail class="size-4" />
 										{isSubmittingRecovery ? 'Enviando...' : 'Enviar link de recuperação'}
 									</Button>
-									<div class="flex flex-row items-center justify-between gap-2">
-										<Button
-											type="button"
-											variant="link"
-											size="sm"
-											class="text-[11px]! font-normal! text-on-white-tertiary! hover:text-on-white-main!"
-											onclick={resetRecoveryFlow}
-										>
-											Voltar para Entrar
-										</Button>
-										<Button
-											type="button"
-											variant="link"
-											size="sm"
-											class="text-[11px]! font-normal! text-on-white-secondary! hover:text-on-white-main!"
-											onclick={() => {
-												clearRecoveryFeedback();
-												recoveryStep = 'confirm';
-											}}
-										>
-											Já tenho um token
-										</Button>
-									</div>
+									<Button
+										type="button"
+										variant="link"
+										size="sm"
+										class="self-start text-[11px]! font-normal! text-on-white-tertiary! hover:text-on-white-main!"
+										onclick={resetRecoveryFlow}
+									>
+										Voltar para Entrar
+									</Button>
 								</form>
+							{:else if recoveryStep === 'sent'}
+								<div
+									class="flex flex-col gap-4 rounded-xl border border-card-border bg-surface-subtle p-5"
+								>
+									<div class="flex flex-row items-center gap-2.25">
+										<MailCheck class="size-4.5 text-shield-green" />
+										<p class="text-[15px] text-on-white-main">Verifique seu e-mail</p>
+									</div>
+									<p
+										role="status"
+										class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-[160%] text-emerald-800"
+									>
+										{recoveryMessage ??
+											'Se o e-mail estiver cadastrado, enviaremos um link para redefinir sua senha.'}
+									</p>
+									<p class="text-xs leading-[160%] text-on-white-secondary">
+										Acesse a caixa de entrada de
+										<span class="font-semibold text-on-white-main">{sentRecoveryEmail}</span>
+										(e verifique também a pasta de spam) e clique no link enviado para definir sua nova
+										senha.
+									</p>
+									<Button type="button" class="w-full" onclick={resetRecoveryFlow}>
+										<ArrowRight class="size-4" />
+										Voltar para Entrar
+									</Button>
+									<Button
+										type="button"
+										variant="link"
+										size="sm"
+										class="self-start text-[11px]! font-normal! text-on-white-secondary! hover:text-on-white-main!"
+										onclick={requestNewRecoveryLink}
+									>
+										Não recebeu o e-mail? Enviar novamente
+									</Button>
+								</div>
 							{:else if recoveryStep === 'confirm'}
 								<form
 									class="flex flex-col gap-4 rounded-xl border border-card-border bg-surface-subtle p-5"
@@ -450,25 +497,17 @@
 										<KeyRound class="size-4.5 text-on-white-main" />
 										<p class="text-[15px] text-on-white-main">Redefinir Senha</p>
 									</div>
-									{#if recoveryMessage}
-										<p role="status" class="text-xs leading-[160%] text-emerald-700">
-											{recoveryMessage}
-										</p>
-									{:else}
-										<p class="text-xs leading-[160%] text-on-white-secondary">
-											Informe o token recebido por e-mail e defina sua nova senha.
+									<p class="text-xs leading-[160%] text-on-white-secondary">
+										Defina sua nova senha de acesso abaixo.
+									</p>
+									{#if tokenError}
+										<p
+											role="alert"
+											class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-status-danger"
+										>
+											{tokenError}
 										</p>
 									{/if}
-									<TextInput
-										label="Token recebido por e-mail"
-										type="text"
-										placeholder="Cole o token de recuperação"
-										autocomplete="one-time-code"
-										hint="&nbsp;"
-										error={tokenError ?? undefined}
-										disabled={isSubmittingRecovery}
-										bind:value={resetToken}
-									/>
 									<TextInput
 										label="Nova Senha"
 										type={showNewPassword ? 'text' : 'password'}
@@ -515,12 +554,9 @@
 											variant="link"
 											size="sm"
 											class="text-[11px]! font-normal! text-on-white-secondary! hover:text-on-white-main!"
-											onclick={() => {
-												clearRecoveryFeedback();
-												recoveryStep = 'request';
-											}}
+											onclick={requestNewRecoveryLink}
 										>
-											Solicitar novo token
+											Solicitar novo link
 										</Button>
 									</div>
 								</form>

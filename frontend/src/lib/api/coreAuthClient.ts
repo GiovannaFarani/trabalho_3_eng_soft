@@ -1,7 +1,7 @@
 import {
 	createHttpClient,
 	type ApiResponse,
-	type HttpClient,
+	type HttpPostClient,
 	type RequestOptions
 } from './httpClient.ts';
 
@@ -45,7 +45,7 @@ export function isStrongPassword(password: string): boolean {
 	return STRONG_PASSWORD_REGEX.test(password);
 }
 
-export function createPasswordRecoveryClient(httpClient: HttpClient): PasswordRecoveryClient {
+export function createPasswordRecoveryClient(httpClient: HttpPostClient): PasswordRecoveryClient {
 	return {
 		requestPasswordReset(payload, options) {
 			return httpClient.post<MessageResponse, ForgotPasswordRequest>(

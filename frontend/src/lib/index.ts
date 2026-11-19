@@ -27,6 +27,8 @@ export {
 	type ApiResponse,
 	type HttpClient,
 	type HttpClientConfig,
+	type HttpGetClient,
+	type HttpPostClient,
 	type RequestOptions
 } from './api/httpClient.ts';
 export {
@@ -41,3 +43,17 @@ export {
 	type PasswordRecoveryClient,
 	type ResetPasswordRequest
 } from './api/coreAuthClient.ts';
+export {
+	createRecordsReaderClient,
+	evidenceHttpClient,
+	formatRecordTimestamp,
+	mapEvidenceRecordDto,
+	mapRecordStatus,
+	recordsReaderClient,
+	splitDetailsSummary,
+	type BackendRecordStatus,
+	type EvidenceRecord,
+	type EvidenceRecordDto,
+	type EvidenceRecordStatus,
+	type RecordsReaderClient
+} from './api/evidenceRecordsClient.ts';

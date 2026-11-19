@@ -10,6 +10,10 @@ export default defineConfig({
 			'/api/auth': {
 				target: 'http://localhost:3001',
 				changeOrigin: true
+			},
+			'/api/records': {
+				target: 'http://localhost:3002',
+				changeOrigin: true
 			}
 		}
 	},
@@ -17,6 +21,10 @@ export default defineConfig({
 		proxy: {
 			'/api/auth': {
 				target: 'http://localhost:3001',
+				changeOrigin: true
+			},
+			'/api/records': {
+				target: 'http://localhost:3002',
 				changeOrigin: true
 			}
 		}

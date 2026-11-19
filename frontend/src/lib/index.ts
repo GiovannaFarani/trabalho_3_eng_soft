@@ -40,6 +40,7 @@ export {
 	createAuthLogoutClient,
 	createAuthRegisterClient,
 	createPasswordRecoveryClient,
+	formatCpf,
 	isStrongPassword,
 	normalizeBackendUser,
 	PASSWORD_RULE_MESSAGE,

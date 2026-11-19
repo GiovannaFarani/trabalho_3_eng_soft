@@ -25,6 +25,7 @@
 		authSession,
 		Button,
 		Checkbox,
+		formatCpf,
 		isStrongPassword,
 		Label,
 		normalizeBackendUser,
@@ -134,6 +135,36 @@
 		registerTermsError = null;
 	}
 
+	function handleCpfInput(event: Event & { currentTarget: HTMLInputElement }) {
+		const input = event.currentTarget;
+		const raw = input.value;
+		const selectionStart = input.selectionStart ?? raw.length;
+		const digitsBeforeCaret = raw.slice(0, selectionStart).replace(/\D/g, '').length;
+		const formatted = formatCpf(raw);
+
+		cpf = formatted;
+		if (input.value !== formatted) {
+			input.value = formatted;
+		}
+
+		let caretPos = formatted.length;
+		if (digitsBeforeCaret === 0) {
+			caretPos = 0;
+		} else {
+			let seenDigits = 0;
+			for (let i = 0; i < formatted.length; i += 1) {
+				if (/\d/.test(formatted[i])) {
+					seenDigits += 1;
+					if (seenDigits === digitsBeforeCaret) {
+						caretPos = i + 1;
+						break;
+					}
+				}
+			}
+		}
+		input.setSelectionRange(caretPos, caretPos);
+	}
+
 	async function handleLogin(event: SubmitEvent) {
 		event.preventDefault();
 		loginError = null;
@@ -167,10 +198,11 @@
 
 		const trimmedName = fullName.trim();
 		const trimmedEmail = registerEmail.trim();
-		const trimmedCpf = cpf.trim();
+		const formattedCpf = formatCpf(cpf);
+		cpf = formattedCpf;
 		const trimmedOab = oabNumber.trim();
 
-		if (!trimmedName || !trimmedEmail || !trimmedCpf) {
+		if (!trimmedName || !trimmedEmail || !formattedCpf) {
 			registerError = 'Preencha nome completo, e-mail e CPF.';
 			return;
 		}
@@ -196,7 +228,7 @@
 				nome_completo: trimmedName,
 				email: trimmedEmail,
 				senha: registerPassword,
-				cpf: trimmedCpf,
+				cpf: formattedCpf,
 				tipo_perfil: profileType === 'lawyer' ? 'ADVOGADO' : 'USUARIO_COMUM',
 				numero_oab: profileType === 'lawyer' ? trimmedOab : null,
 				termos_aceitos: acceptedTerms
@@ -710,8 +742,10 @@
 									wrapperClass="flex-1"
 									label="CPF"
 									type="text"
+									inputmode="numeric"
 									placeholder="123.456.789-09"
 									disabled={isSubmittingRegister}
+									oninput={handleCpfInput}
 									bind:value={cpf}
 								/>
 								{#if profileType === 'lawyer'}

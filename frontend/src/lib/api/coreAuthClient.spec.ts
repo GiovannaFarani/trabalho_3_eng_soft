@@ -4,6 +4,7 @@ import {
 	createAuthLogoutClient,
 	createAuthRegisterClient,
 	createPasswordRecoveryClient,
+	formatCpf,
 	isStrongPassword
 } from './coreAuthClient.ts';
 import { ApiError, CORRELATION_ID_HEADER, createHttpClient } from './httpClient.ts';
@@ -116,6 +117,15 @@ describe('createHttpClient & PasswordRecoveryClient (ISP)', () => {
 		expect(isStrongPassword('weak')).toBe(false);
 		expect(isStrongPassword('NoSymbol123')).toBe(false);
 		expect(isStrongPassword('NoNumber@')).toBe(false);
+	});
+
+	it('formats CPF progressively as 000.000.000-00 and caps at 11 digits', () => {
+		expect(formatCpf('')).toBe('');
+		expect(formatCpf('123')).toBe('123');
+		expect(formatCpf('1234')).toBe('123.4');
+		expect(formatCpf('1234567')).toBe('123.456.7');
+		expect(formatCpf('12345678909')).toBe('123.456.789-09');
+		expect(formatCpf('123.456.789-09 extra 999')).toBe('123.456.789-09');
 	});
 
 	it('calls POST /api/auth/login and normalizes token and user payload', async () => {

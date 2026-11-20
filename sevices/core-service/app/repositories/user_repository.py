@@ -12,7 +12,7 @@ from typing import Optional
 
 from psycopg2 import errors as pg_errors
 
-from app.domain.errors import EmailAlreadyRegisteredError
+from app.domain.errors import CpfAlreadyRegisteredError, EmailAlreadyRegisteredError
 
 
 @dataclass(frozen=True)
@@ -44,8 +44,11 @@ class IUserRepository(ABC):
     def find_by_email(self, cur, email: str) -> Optional[User]: ...
 
     @abstractmethod
+    def find_by_cpf(self, cur, cpf: str) -> Optional[User]: ...
+
+    @abstractmethod
     def create(self, cur, user: NewUser) -> User:
-        """Insere o usuário. Levanta EmailAlreadyRegisteredError se o e-mail já existir."""
+        """Insere o usuário. Levanta EmailAlreadyRegisteredError ou CpfAlreadyRegisteredError se já existirem."""
 
 
 _COLUMNS = "id, nome_completo, email, senha_hash, cpf, tipo_perfil, numero_oab"
@@ -71,13 +74,22 @@ class PgUserRepository(IUserRepository):
         row = cur.fetchone()
         return _to_user(row) if row else None
 
+    def find_by_cpf(self, cur, cpf: str) -> Optional[User]:
+        cur.execute(
+            f"SELECT {_COLUMNS} FROM users WHERE cpf = %s", (cpf,)
+        )
+        row = cur.fetchone()
+        return _to_user(row) if row else None
+
     def create(self, cur, user: NewUser) -> User:
         # A checagem prévia dá a resposta 409 no caso comum (inclusive para
         # e-mails que só diferem em maiúsculas/minúsculas, que a UNIQUE do
         # banco não pega). A UniqueViolation cobre a corrida entre dois
-        # cadastros simultâneos com o mesmo e-mail.
+        # cadastros simultâneos com o mesmo e-mail ou CPF.
         if self.find_by_email(cur, user.email) is not None:
             raise EmailAlreadyRegisteredError("E-mail já cadastrado.")
+        if self.find_by_cpf(cur, user.cpf) is not None:
+            raise CpfAlreadyRegisteredError("CPF já cadastrado.")
         cur.execute("SAVEPOINT create_user")
         try:
             cur.execute(
@@ -96,5 +108,8 @@ class PgUserRepository(IUserRepository):
             )
         except pg_errors.UniqueViolation as exc:
             cur.execute("ROLLBACK TO SAVEPOINT create_user")
+            constraint = getattr(getattr(exc, "diag", None), "constraint_name", "") or ""
+            if "cpf" in constraint.lower():
+                raise CpfAlreadyRegisteredError("CPF já cadastrado.") from exc
             raise EmailAlreadyRegisteredError("E-mail já cadastrado.") from exc
         return _to_user(cur.fetchone())

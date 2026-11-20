@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from typing import Callable, ContextManager, Optional
 
 from app.domain.errors import (
+    CpfAlreadyRegisteredError,
     EmailAlreadyRegisteredError,
     InvalidCpfError,
     InvalidCredentialsError,
@@ -122,6 +123,9 @@ class AuthService:
                 user = self._users.create(cur, new_user)
         except EmailAlreadyRegisteredError:
             log_event(logging.INFO, "user_register_duplicate_email")
+            raise
+        except CpfAlreadyRegisteredError:
+            log_event(logging.INFO, "user_register_duplicate_cpf")
             raise
         log_event(logging.INFO, "user_registered", userId=user.id, role=user.tipo_perfil)
         return user

@@ -6,6 +6,7 @@ import jwt
 import pytest
 
 from app.domain.errors import (
+    CpfAlreadyRegisteredError,
     EmailAlreadyRegisteredError,
     InvalidCpfError,
     InvalidCredentialsError,
@@ -94,6 +95,13 @@ def test_register_duplicate_email_is_rejected_case_insensitive(ctx):
     svc.register(ADVOGADO)
     with pytest.raises(EmailAlreadyRegisteredError):
         svc.register(replace(ADVOGADO, email="MARIA@exemplo.com.br"))
+
+
+def test_register_duplicate_cpf_is_rejected_regardless_of_formatting(ctx):
+    svc, *_ = ctx
+    svc.register(ADVOGADO)
+    with pytest.raises(CpfAlreadyRegisteredError):
+        svc.register(replace(ADVOGADO, email="outra@exemplo.com.br", cpf="123.456.789-09"))
 
 
 # ------------------------------------------------------------------ REQ 03

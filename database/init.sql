@@ -6,7 +6,7 @@ CREATE TABLE users (
     nome_completo VARCHAR(150) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
     senha_hash VARCHAR(255) NOT NULL,
-    cpf VARCHAR(14) NOT NULL,
+    cpf VARCHAR(14) UNIQUE NOT NULL,
     tipo_perfil VARCHAR(20) NOT NULL CHECK (tipo_perfil IN ('ADVOGADO', 'USUARIO_COMUM')),
     numero_oab VARCHAR(30),
     termos_aceitos BOOLEAN NOT NULL DEFAULT TRUE,

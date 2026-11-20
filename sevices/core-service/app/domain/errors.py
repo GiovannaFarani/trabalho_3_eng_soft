@@ -30,5 +30,9 @@ class EmailAlreadyRegisteredError(ValueError):
     """Já existe usuário com este e-mail."""
 
 
+class CpfAlreadyRegisteredError(ValueError):
+    """Já existe usuário com este CPF."""
+
+
 class InvalidCredentialsError(ValueError):
     """E-mail ou senha incorretos no login."""

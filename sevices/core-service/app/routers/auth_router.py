@@ -8,6 +8,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.dependencies import get_auth_service
 from app.domain.errors import (
+    CpfAlreadyRegisteredError,
     EmailAlreadyRegisteredError,
     InvalidCpfError,
     InvalidCredentialsError,
@@ -52,7 +53,7 @@ def register(
         user = service.register(RegisterCommand(**body.model_dump()))
     except (TermsNotAcceptedError, WeakPasswordError, MissingOabError, InvalidCpfError) as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
-    except EmailAlreadyRegisteredError as exc:
+    except (EmailAlreadyRegisteredError, CpfAlreadyRegisteredError) as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
     return _to_response(user)
 

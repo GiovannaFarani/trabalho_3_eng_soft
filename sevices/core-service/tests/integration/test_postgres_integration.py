@@ -36,12 +36,14 @@ def db():
 @pytest.fixture
 def user(db):
     email = f"it-{uuid.uuid4().hex[:8]}@exemplo.com.br"
+    digits = f"{uuid.uuid4().int % 10**11:011d}"
+    cpf = f"{digits[:3]}.{digits[3:6]}.{digits[6:9]}-{digits[9:]}"
     old_hash = bcrypt.hashpw(b"Antiga@123", bcrypt.gensalt()).decode()
     with db.transaction() as cur:
         cur.execute(
             "INSERT INTO users (nome_completo,email,senha_hash,cpf,tipo_perfil) "
-            "VALUES ('Teste Integração',%s,%s,'123.456.789-09','USUARIO_COMUM') RETURNING id",
-            (email, old_hash),
+            "VALUES ('Teste Integração',%s,%s,%s,'USUARIO_COMUM') RETURNING id",
+            (email, old_hash, cpf),
         )
         uid = str(cur.fetchone()["id"])
     yield {"id": uid, "email": email}

@@ -68,7 +68,7 @@ class FakeBlacklist(ITokenBlacklist):
 # ------------------------------------------------- Cadastro / Login / Logout
 import uuid  # noqa: E402
 
-from app.domain.errors import EmailAlreadyRegisteredError  # noqa: E402
+from app.domain.errors import CpfAlreadyRegisteredError, EmailAlreadyRegisteredError  # noqa: E402
 from app.repositories.revoked_token_repository import IRevokedTokenRepository  # noqa: E402
 from app.repositories.user_repository import IUserRepository, NewUser, User  # noqa: E402
 from app.security.password_hasher import IPasswordHasher  # noqa: E402
@@ -89,9 +89,17 @@ class FakeUserRepository(IUserRepository):
     def find_by_email(self, cur, email):
         return self.users.get(email.lower())
 
+    def find_by_cpf(self, cur, cpf):
+        for existing in self.users.values():
+            if existing.cpf == cpf:
+                return existing
+        return None
+
     def create(self, cur, user: NewUser) -> User:
         if user.email.lower() in self.users:
             raise EmailAlreadyRegisteredError("E-mail já cadastrado.")
+        if self.find_by_cpf(cur, user.cpf) is not None:
+            raise CpfAlreadyRegisteredError("CPF já cadastrado.")
         created = User(
             id=str(uuid.uuid4()), nome_completo=user.nome_completo, email=user.email,
             senha_hash=user.senha_hash, cpf=user.cpf, tipo_perfil=user.tipo_perfil,

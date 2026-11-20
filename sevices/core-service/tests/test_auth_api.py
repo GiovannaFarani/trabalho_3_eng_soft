@@ -86,6 +86,12 @@ def test_register_duplicate_email_is_409(client):
     assert client.post("/api/auth/register", json=ADVOGADO).status_code == 409
 
 
+def test_register_duplicate_cpf_is_409(client):
+    assert client.post("/api/auth/register", json=ADVOGADO).status_code == 201
+    r = client.post("/api/auth/register", json={**ADVOGADO, "email": "outro@exemplo.com.br"})
+    assert r.status_code == 409 and "CPF" in r.json()["detail"]
+
+
 def test_register_invalid_profile_is_422(client):
     r = client.post("/api/auth/register", json={**ADVOGADO, "tipo_perfil": "ADMIN"})
     assert r.status_code == 422
